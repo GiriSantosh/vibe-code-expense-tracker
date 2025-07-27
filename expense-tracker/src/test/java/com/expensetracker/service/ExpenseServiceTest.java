@@ -11,6 +11,11 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.Arrays;
@@ -35,19 +40,21 @@ public class ExpenseServiceTest {
     private ExpenseService expenseService;
 
     @Test
-    public void whenGetAllExpenses_thenReturnExpenseList() {
+    public void whenGetAllExpenses_thenReturnExpensePage() {
         // given
         Expense expense1 = new Expense(new BigDecimal("10.00"), ExpenseCategory.FOOD, "Lunch", LocalDate.now());
         Expense expense2 = new Expense(new BigDecimal("20.00"), ExpenseCategory.TRANSPORTATION, "Bus fare", LocalDate.now());
-        List<Expense> expectedExpenses = Arrays.asList(expense1, expense2);
-        when(expenseRepository.findAll()).thenReturn(expectedExpenses);
+        List<Expense> expenseList = Arrays.asList(expense1, expense2);
+        Page<Expense> expectedPage = new PageImpl<>(expenseList);
+        Pageable pageable = PageRequest.of(0, 10);
+        when(expenseRepository.findAll(pageable)).thenReturn(expectedPage);
 
         // when
-        List<Expense> actualExpenses = expenseService.getAllExpenses();
+        Page<Expense> actualPage = expenseService.getAllExpenses(pageable);
 
         // then
-        assertThat(actualExpenses).isEqualTo(expectedExpenses);
-        verify(expenseRepository, times(1)).findAll();
+        assertThat(actualPage).isEqualTo(expectedPage);
+        verify(expenseRepository, times(1)).findAll(pageable);
     }
 
     @Test
@@ -116,63 +123,71 @@ public class ExpenseServiceTest {
     }
 
     @Test
-    public void whenGetExpensesByCategory_thenReturnExpenseList() {
+    public void whenGetExpensesByCategory_thenReturnExpensePage() {
         // given
         Expense expense1 = new Expense(new BigDecimal("10.00"), ExpenseCategory.FOOD, "Lunch", LocalDate.now());
-        List<Expense> expectedExpenses = Collections.singletonList(expense1);
-        when(expenseRepository.findByCategory(ExpenseCategory.FOOD)).thenReturn(expectedExpenses);
+        List<Expense> expenseList = Collections.singletonList(expense1);
+        Page<Expense> expectedPage = new PageImpl<>(expenseList);
+        Pageable pageable = PageRequest.of(0, 10);
+        when(expenseRepository.findByCategory(ExpenseCategory.FOOD, pageable)).thenReturn(expectedPage);
 
         // when
-        List<Expense> actualExpenses = expenseService.getExpensesByCategory(ExpenseCategory.FOOD);
+        Page<Expense> actualPage = expenseService.getExpensesByCategory(ExpenseCategory.FOOD, pageable);
 
         // then
-        assertThat(actualExpenses).isEqualTo(expectedExpenses);
-        verify(expenseRepository, times(1)).findByCategory(ExpenseCategory.FOOD);
+        assertThat(actualPage).isEqualTo(expectedPage);
+        verify(expenseRepository, times(1)).findByCategory(ExpenseCategory.FOOD, pageable);
     }
 
     @Test
     public void whenGetExpensesByCategoryWithNullCategory_thenThrowInvalidInputException() {
-        assertThrows(InvalidInputException.class, () -> expenseService.getExpensesByCategory(null));
-        verify(expenseRepository, never()).findByCategory(any(ExpenseCategory.class));
+        Pageable pageable = PageRequest.of(0, 10);
+        assertThrows(InvalidInputException.class, () -> expenseService.getExpensesByCategory(null, pageable));
+        verify(expenseRepository, never()).findByCategory(any(ExpenseCategory.class), any(Pageable.class));
     }
 
     @Test
-    public void whenGetExpensesByDateRange_thenReturnExpenseList() {
+    public void whenGetExpensesByDateRange_thenReturnExpensePage() {
         // given
         LocalDate startDate = LocalDate.now().minusDays(1);
         LocalDate endDate = LocalDate.now();
         Expense expense1 = new Expense(new BigDecimal("10.00"), ExpenseCategory.FOOD, "Lunch", startDate);
-        List<Expense> expectedExpenses = Collections.singletonList(expense1);
-        when(expenseRepository.findByDateBetween(startDate, endDate)).thenReturn(expectedExpenses);
+        List<Expense> expenseList = Collections.singletonList(expense1);
+        Page<Expense> expectedPage = new PageImpl<>(expenseList);
+        Pageable pageable = PageRequest.of(0, 10);
+        when(expenseRepository.findByDateBetween(startDate, endDate, pageable)).thenReturn(expectedPage);
 
         // when
-        List<Expense> actualExpenses = expenseService.getExpensesByDateRange(startDate, endDate);
+        Page<Expense> actualPage = expenseService.getExpensesByDateRange(startDate, endDate, pageable);
 
         // then
-        assertThat(actualExpenses).isEqualTo(expectedExpenses);
-        verify(expenseRepository, times(1)).findByDateBetween(startDate, endDate);
+        assertThat(actualPage).isEqualTo(expectedPage);
+        verify(expenseRepository, times(1)).findByDateBetween(startDate, endDate, pageable);
     }
 
     @Test
     public void whenGetExpensesByDateRangeWithNullStartDate_thenThrowInvalidInputException() {
         LocalDate endDate = LocalDate.now();
-        assertThrows(InvalidInputException.class, () -> expenseService.getExpensesByDateRange(null, endDate));
-        verify(expenseRepository, never()).findByDateBetween(any(LocalDate.class), any(LocalDate.class));
+        Pageable pageable = PageRequest.of(0, 10);
+        assertThrows(InvalidInputException.class, () -> expenseService.getExpensesByDateRange(null, endDate, pageable));
+        verify(expenseRepository, never()).findByDateBetween(any(LocalDate.class), any(LocalDate.class), any(Pageable.class));
     }
 
     @Test
     public void whenGetExpensesByDateRangeWithNullEndDate_thenThrowInvalidInputException() {
         LocalDate startDate = LocalDate.now();
-        assertThrows(InvalidInputException.class, () -> expenseService.getExpensesByDateRange(startDate, null));
-        verify(expenseRepository, never()).findByDateBetween(any(LocalDate.class), any(LocalDate.class));
+        Pageable pageable = PageRequest.of(0, 10);
+        assertThrows(InvalidInputException.class, () -> expenseService.getExpensesByDateRange(startDate, null, pageable));
+        verify(expenseRepository, never()).findByDateBetween(any(LocalDate.class), any(LocalDate.class), any(Pageable.class));
     }
 
     @Test
     public void whenGetExpensesByDateRangeWithStartDateAfterEndDate_thenThrowInvalidInputException() {
         LocalDate startDate = LocalDate.now();
         LocalDate endDate = LocalDate.now().minusDays(1);
-        assertThrows(InvalidInputException.class, () -> expenseService.getExpensesByDateRange(startDate, endDate));
-        verify(expenseRepository, never()).findByDateBetween(any(LocalDate.class), any(LocalDate.class));
+        Pageable pageable = PageRequest.of(0, 10);
+        assertThrows(InvalidInputException.class, () -> expenseService.getExpensesByDateRange(startDate, endDate, pageable));
+        verify(expenseRepository, never()).findByDateBetween(any(LocalDate.class), any(LocalDate.class), any(Pageable.class));
     }
 
     @Test

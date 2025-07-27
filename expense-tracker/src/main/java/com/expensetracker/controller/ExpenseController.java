@@ -12,6 +12,8 @@ import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import jakarta.validation.Valid;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
@@ -26,16 +28,17 @@ public class ExpenseController {
     private ExpenseService expenseService;
 
     @GetMapping
-    public List<Expense> getAllExpenses(
+    public Page<Expense> getAllExpenses(
             @RequestParam(required = false) ExpenseCategory category,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate) {
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate,
+            Pageable pageable) {
         if (category != null) {
-            return expenseService.getExpensesByCategory(category);
+            return expenseService.getExpensesByCategory(category, pageable);
         } else if (startDate != null && endDate != null) {
-            return expenseService.getExpensesByDateRange(startDate, endDate);
+            return expenseService.getExpensesByDateRange(startDate, endDate, pageable);
         } else {
-            return expenseService.getAllExpenses();
+            return expenseService.getAllExpenses(pageable);
         }
     }
 

@@ -105,7 +105,7 @@ describe('App', () => {
 
     const amountInput = screen.getByLabelText(/Amount:/i);
     const descriptionInput = screen.getByLabelText(/Description:/i);
-    const categorySelect = screen.getByRole('combobox', { name: /Category:/i, hidden: true });
+    const categorySelect = screen.getByLabelText(/Category:/i, { selector: 'select#filterCategory' });
     const dateInput = screen.getByLabelText(/Date:/i);
     const submitButton = screen.getByRole('button', { name: /Add Expense/i });
 

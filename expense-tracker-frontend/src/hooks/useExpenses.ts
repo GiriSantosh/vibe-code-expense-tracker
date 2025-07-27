@@ -22,18 +22,22 @@ export const useExpenses = () => {
   const [categorySummary, setCategorySummary] = useState<CategorySummary[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
+  const [totalPages, setTotalPages] = useState<number>(0);
+  const [totalElements, setTotalElements] = useState<number>(0);
 
-  const fetchExpenses = async (category?: ExpenseCategory, startDate?: string, endDate?: string) => {
+  const fetchExpenses = async (category?: ExpenseCategory, startDate?: string, endDate?: string, page: number = 0, size: number = 10) => {
     setLoading(true);
     setError(null);
     try {
-      const params: any = {};
+      const params: any = { page, size };
       if (category) params.category = category;
       if (startDate) params.startDate = startDate;
       if (endDate) params.endDate = endDate;
 
-      const response = await axios.get<Expense[]>(API_BASE_URL, { params });
-      setExpenses(response.data);
+      const response = await axios.get<any>(API_BASE_URL, { params });
+      setExpenses(response.data.content);
+      setTotalPages(response.data.totalPages);
+      setTotalElements(response.data.totalElements);
     } catch (err) {
       setError('Failed to fetch expenses.');
       console.error(err);
@@ -123,5 +127,7 @@ export const useExpenses = () => {
     deleteExpense,
     fetchMonthlySummary,
     fetchCategorySummary,
+    totalPages,
+    totalElements,
   };
 };

@@ -13,6 +13,10 @@ import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
+
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.Arrays;
@@ -41,14 +45,16 @@ public class ExpenseControllerTest {
         // given
         Expense expense1 = new Expense(new BigDecimal("10.00"), ExpenseCategory.FOOD, "Lunch", LocalDate.now());
         Expense expense2 = new Expense(new BigDecimal("20.00"), ExpenseCategory.TRANSPORTATION, "Bus fare", LocalDate.now());
-        List<Expense> allExpenses = Arrays.asList(expense1, expense2);
-        when(expenseService.getAllExpenses()).thenReturn(allExpenses);
+        Page<Expense> allExpensesPage = new PageImpl<>(Arrays.asList(expense1, expense2));
+        when(expenseService.getAllExpenses(any(Pageable.class))).thenReturn(allExpensesPage);
 
         // when & then
         mockMvc.perform(get("/api/expenses"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$[0].description").value("Lunch"))
-                .andExpect(jsonPath("$[1].description").value("Bus fare"));
+                .andExpect(jsonPath("$.content[0].description").value("Lunch"))
+                .andExpect(jsonPath("$.content[1].description").value("Bus fare"))
+                .andExpect(jsonPath("$.totalPages").value(1))
+                .andExpect(jsonPath("$.totalElements").value(2));
     }
 
     @Test

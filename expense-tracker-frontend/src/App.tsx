@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useExpenses } from './hooks/useExpenses';
 import ExpenseForm from './components/ExpenseForm';
 import ExpenseList from './components/ExpenseList';
@@ -9,12 +9,18 @@ import MonthlySplineChart from './components/MonthlySplineChart'; // New import
 import { ExpenseCategory } from './types/ExpenseCategory';
 
 function App() {
-  const { expenses, monthlySummary, categorySummary, loading, error, fetchExpenses, addExpense, deleteExpense, fetchMonthlySummary } = useExpenses();
+  const { expenses, monthlySummary, categorySummary, loading, error, fetchExpenses, addExpense, deleteExpense, fetchMonthlySummary, totalPages, totalElements } = useExpenses();
+  const [currentPage, setCurrentPage] = useState(0);
+  const [pageSize, setPageSize] = useState(10);
+
+  useEffect(() => {
+    fetchExpenses(undefined, undefined, undefined, currentPage, pageSize);
+  }, [currentPage, pageSize]);
 
   const handleAddExpense = async (expense: any) => {
     try {
       await addExpense(expense);
-      fetchExpenses(); // Refresh list after adding
+      fetchExpenses(undefined, undefined, undefined, currentPage, pageSize); // Refresh list after adding
     } catch (err) {
       // Error handled in hook, can add more specific UI feedback here if needed
     }
@@ -23,13 +29,15 @@ function App() {
   const handleDeleteExpense = async (id: number) => {
     try {
       await deleteExpense(id);
+      fetchExpenses(undefined, undefined, undefined, currentPage, pageSize); // Refresh list after deleting
     } catch (err) {
       // Error handled in hook
     }
   };
 
   const handleFilterExpenses = (category?: ExpenseCategory, startDate?: string, endDate?: string) => {
-    fetchExpenses(category, startDate, endDate);
+    setCurrentPage(0); // Reset to first page on filter change
+    fetchExpenses(category, startDate, endDate, 0, pageSize);
     // Also update monthly summary based on the filtered date range
     if (startDate && endDate) {
       fetchMonthlySummary(startDate, endDate);
@@ -40,6 +48,15 @@ function App() {
       const lastDayOfMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0).toISOString().split('T')[0];
       fetchMonthlySummary(firstDayOfMonth, lastDayOfMonth);
     }
+  };
+
+  const handlePageChange = (newPage: number) => {
+    setCurrentPage(newPage);
+  };
+
+  const handlePageSizeChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
+    setPageSize(Number(event.target.value));
+    setCurrentPage(0); // Reset to first page when page size changes
   };
 
   return (
@@ -64,6 +81,38 @@ function App() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
           <div className="lg:col-span-2">
             <ExpenseList expenses={expenses} onDelete={handleDeleteExpense} />
+          <div className="flex justify-between items-center mt-4">
+            <div>
+              Page {currentPage + 1} of {totalPages} (Total: {totalElements} items)
+            </div>
+            <div className="flex items-center space-x-2">
+              <label htmlFor="pageSize" className="text-gray-700">Items per page:</label>
+              <select
+                id="pageSize"
+                value={pageSize}
+                onChange={handlePageSizeChange}
+                className="shadow appearance-none border rounded py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+              >
+                <option value="5">5</option>
+                <option value="10">10</option>
+                <option value="20">20</option>
+              </select>
+              <button
+                onClick={() => handlePageChange(currentPage - 1)}
+                disabled={currentPage === 0}
+                className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Previous
+              </button>
+              <button
+                onClick={() => handlePageChange(currentPage + 1)}
+                disabled={currentPage === totalPages - 1}
+                className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Next
+              </button>
+            </div>
+          </div>
           </div>
           <div className="lg:col-span-1">
             <CategoryChart categorySummary={categorySummary} />

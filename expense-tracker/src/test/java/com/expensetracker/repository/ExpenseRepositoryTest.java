@@ -7,6 +7,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.boot.test.autoconfigure.orm.jpa.TestEntityManager;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
@@ -29,13 +33,14 @@ public class ExpenseRepositoryTest {
         Expense expense = new Expense(new BigDecimal("10.00"), ExpenseCategory.FOOD, "Lunch", LocalDate.now());
         entityManager.persist(expense);
         entityManager.flush();
+        Pageable pageable = PageRequest.of(0, 10);
 
         // when
-        List<Expense> found = expenseRepository.findByCategory(ExpenseCategory.FOOD);
+        Page<Expense> found = expenseRepository.findByCategory(ExpenseCategory.FOOD, pageable);
 
         // then
-        assertThat(found).hasSize(1);
-        assertThat(found.get(0).getCategory()).isEqualTo(ExpenseCategory.FOOD);
+        assertThat(found.getContent()).hasSize(1);
+        assertThat(found.getContent().get(0).getCategory()).isEqualTo(ExpenseCategory.FOOD);
     }
 
     @Test
@@ -46,12 +51,13 @@ public class ExpenseRepositoryTest {
         entityManager.persist(expense1);
         entityManager.persist(expense2);
         entityManager.flush();
+        Pageable pageable = PageRequest.of(0, 10);
 
         // when
-        List<Expense> found = expenseRepository.findByDateBetween(LocalDate.now().minusDays(2), LocalDate.now());
+        Page<Expense> found = expenseRepository.findByDateBetween(LocalDate.now().minusDays(2), LocalDate.now(), pageable);
 
         // then
-        assertThat(found).hasSize(2);
+        assertThat(found.getContent()).hasSize(2);
     }
 
     @Test

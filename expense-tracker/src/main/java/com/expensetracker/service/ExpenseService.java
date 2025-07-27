@@ -8,6 +8,9 @@ import com.expensetracker.repository.ExpenseRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+
 import java.time.LocalDate;
 import java.util.HashMap;
 import java.util.List;
@@ -20,8 +23,8 @@ public class ExpenseService {
     @Autowired
     private ExpenseRepository expenseRepository;
 
-    public List<Expense> getAllExpenses() {
-        return expenseRepository.findAll();
+    public Page<Expense> getAllExpenses(Pageable pageable) {
+        return expenseRepository.findAll(pageable);
     }
 
     public Expense getExpenseById(Long id) {
@@ -40,21 +43,21 @@ public class ExpenseService {
         expenseRepository.deleteById(id);
     }
 
-    public List<Expense> getExpensesByCategory(ExpenseCategory category) {
+    public Page<Expense> getExpensesByCategory(ExpenseCategory category, Pageable pageable) {
         if (category == null) {
             throw new InvalidInputException("Category cannot be null");
         }
-        return expenseRepository.findByCategory(category);
+        return expenseRepository.findByCategory(category, pageable);
     }
 
-    public List<Expense> getExpensesByDateRange(LocalDate startDate, LocalDate endDate) {
+    public Page<Expense> getExpensesByDateRange(LocalDate startDate, LocalDate endDate, Pageable pageable) {
         if (startDate == null || endDate == null) {
             throw new InvalidInputException("Start date and end date cannot be null");
         }
         if (startDate.isAfter(endDate)) {
             throw new InvalidInputException("Start date cannot be after end date");
         }
-        return expenseRepository.findByDateBetween(startDate, endDate);
+        return expenseRepository.findByDateBetween(startDate, endDate, pageable);
     }
 
     public List<Map<String, Object>> getMonthlySummary(LocalDate startDate, LocalDate endDate) {

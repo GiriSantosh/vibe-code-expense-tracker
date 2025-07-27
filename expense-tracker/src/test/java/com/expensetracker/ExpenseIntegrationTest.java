@@ -65,7 +65,9 @@ public class ExpenseIntegrationTest {
 
         mockMvc.perform(get("/api/expenses"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.length()").value(2));
+                .andExpect(jsonPath("$.content.length()").value(2))
+                .andExpect(jsonPath("$.totalPages").value(1))
+                .andExpect(jsonPath("$.totalElements").value(2));
     }
 
     @Test
@@ -102,8 +104,8 @@ public class ExpenseIntegrationTest {
 
         mockMvc.perform(get("/api/expenses?category=FOOD"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.length()").value(1))
-                .andExpect(jsonPath("$[0].category").value("FOOD"));
+                .andExpect(jsonPath("$.content.length()").value(1))
+                .andExpect(jsonPath("$.content[0].category").value("FOOD"));
     }
 
     @Test
@@ -118,9 +120,9 @@ public class ExpenseIntegrationTest {
 
         mockMvc.perform(get("/api/expenses?startDate=" + yesterday + "&endDate=" + today))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.length()").value(2))
-                .andExpect(jsonPath("$[0].description").value("Yesterday"))
-                .andExpect(jsonPath("$[1].description").value("Today"));
+                .andExpect(jsonPath("$.content.length()").value(2))
+                .andExpect(jsonPath("$.content[0].description").value("Yesterday"))
+                .andExpect(jsonPath("$.content[1].description").value("Today"));
     }
 
     @Test
