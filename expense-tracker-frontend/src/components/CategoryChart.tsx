@@ -1,5 +1,10 @@
 import React from 'react';
-import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer, Legend } from 'recharts';
+import Highcharts from 'highcharts';
+import HighchartsReact from 'highcharts-react-official';
+// Import modules for side effects
+import 'highcharts/highcharts-more';
+import 'highcharts/modules/solid-gauge';
+
 import { ExpenseCategory } from '../types/ExpenseCategory';
 
 interface CategorySummary {
@@ -11,39 +16,68 @@ interface CategoryChartProps {
   categorySummary: CategorySummary[];
 }
 
-const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8', '#82ca9d', '#ffc658'];
-
 const CategoryChart: React.FC<CategoryChartProps> = ({ categorySummary }) => {
   const data = categorySummary.map(item => ({
     name: item.category,
-    value: item.total,
+    y: item.total,
   }));
 
+  const options = {
+    chart: {
+      type: 'pie',
+      height: 300,
+      backgroundColor: 'transparent',
+    },
+    title: {
+      text: 'Category Breakdown',
+      style: {
+        color: '#374151',
+        fontSize: '1.5rem',
+        fontWeight: 'bold',
+      },
+    },
+    tooltip: {
+      pointFormat: '{series.name}: <b>{point.percentage:.1f}%</b>',
+    },
+    accessibility: {
+      point: {
+        valueSuffix: '%',
+      },
+    },
+    plotOptions: {
+      pie: {
+        allowPointSelect: true,
+        cursor: 'pointer',
+        size: '80%', // Make the pie chart larger
+        dataLabels: {
+          enabled: true,
+          format: '<b>{point.name}</b>: {point.percentage:.1f} %',
+          distance: -30, // Adjust distance for better readability with larger pie
+          style: {
+            color: 'white',
+          },
+        },
+        showInLegend: true,
+      },
+    },
+    series: [
+      {
+        name: 'Expenses',
+        colorByPoint: true,
+        data: data,
+      },
+    ],
+    credits: {
+      enabled: false,
+    },
+  };
+
   return (
-    <div className="bg-white p-6 rounded-lg shadow-md mb-6">
-      <h2 className="text-2xl font-bold mb-4">Category Breakdown</h2>
+    <div className="p-6 bg-white rounded-lg shadow-md h-full flex flex-col">
       {data.length === 0 ? (
-        <p>No category data available.</p>
+        <p className="text-gray-600 text-center">No category data available.</p>
       ) : (
-        <ResponsiveContainer width="100%" height={300}>
-          <PieChart>
-            <Pie
-              data={data}
-              cx="50%"
-              cy="50%"
-              labelLine={false}
-              outerRadius={100}
-              fill="#8884d8"
-              dataKey="value"
-            >
-              {data.map((entry, index) => (
-                <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-              ))}
-            </Pie>
-            <Tooltip />
-            <Legend />
-          </PieChart>
-        </ResponsiveContainer>
+        <HighchartsReact highcharts={Highcharts} options={options} />
       )}
     </div>
   );

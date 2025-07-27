@@ -12,16 +12,24 @@ interface ExpenseSummaryProps {
 
 const ExpenseSummary: React.FC<ExpenseSummaryProps> = ({ monthlySummary }) => {
   return (
-    <div className="bg-white p-6 rounded-lg shadow-md mb-6">
-      <h2 className="text-2xl font-bold mb-4">Monthly Summary</h2>
+    <div className="p-6 bg-white rounded-lg shadow-md h-full flex flex-col">
+      <h2 className="text-2xl font-bold text-gray-800 mb-6">Monthly Summary</h2>
       {monthlySummary.length === 0 ? (
-        <p>No monthly summary available.</p>
+        <p className="text-gray-600">No monthly summary available.</p>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="flex-grow grid grid-cols-1 gap-4 overflow-y-auto pr-2">
           {monthlySummary.map((summary, index) => (
-            <div key={index} className="bg-gray-100 p-4 rounded-lg shadow">
-              <h3 className="text-lg font-semibold">{summary.year}-{String(summary.month).padStart(2, '0')}</h3>
-              <p className="text-xl font-bold text-blue-600">${summary.total.toFixed(2)}</p>
+            <div
+              key={index}
+              className="bg-gradient-to-r from-blue-50 to-blue-100 p-4 rounded-lg shadow-sm border border-blue-200 flex justify-between items-center transform transition duration-300 hover:scale-105 hover:shadow-md"
+            >
+              <div>
+                <h3 className="text-lg font-semibold text-blue-800">
+                  {summary.year}-{String(summary.month).padStart(2, '0')}
+                </h3>
+                <p className="text-sm text-gray-600">Total Expenses</p>
+              </div>
+              <p className="text-3xl font-bold text-blue-600">${summary.total.toFixed(2)}</p>
             </div>
           ))}
         </div>

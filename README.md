@@ -277,6 +277,9 @@ cors.allowed-origins=http://localhost:3000
 ### Overall UI
 ![Overall UI](docs/UI-Screenshot.jpeg)
 
+#### Latest UI
+![Latest UI](docs/UI-Screenshot_2.jpeg)
+
 
 
 ### Dashboard View

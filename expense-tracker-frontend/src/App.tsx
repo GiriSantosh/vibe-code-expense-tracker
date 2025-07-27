@@ -5,13 +5,13 @@ import ExpenseList from './components/ExpenseList';
 import ExpenseSummary from './components/ExpenseSummary';
 import CategoryChart from './components/CategoryChart';
 import FilterControls from './components/FilterControls';
-import MonthlySplineChart from './components/MonthlySplineChart'; // New import
+import MonthlySplineChart from './components/MonthlySplineChart';
 import { ExpenseCategory } from './types/ExpenseCategory';
 
 function App() {
   const { expenses, monthlySummary, categorySummary, loading, error, fetchExpenses, addExpense, deleteExpense, fetchMonthlySummary, totalPages, totalElements } = useExpenses();
   const [currentPage, setCurrentPage] = useState(0);
-  const [pageSize, setPageSize] = useState(10);
+  const [pageSize, setPageSize] = useState(5);
 
   useEffect(() => {
     fetchExpenses(undefined, undefined, undefined, currentPage, pageSize);
@@ -51,67 +51,72 @@ function App() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-100 to-purple-100 p-4">
-      <div className="container mx-auto bg-white rounded-xl shadow-lg p-6 my-8">
-        <h1 className="text-4xl font-extrabold text-center text-gray-800 mb-8">Personal Expense Tracker</h1>
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-4 sm:p-6 lg:p-8">
+      <div className="container mx-auto bg-white rounded-3xl shadow-2xl p-6 sm:p-8 lg:p-10 my-8 border border-gray-200">
+        <h1 className="text-5xl font-extrabold text-center text-gray-800 mb-10 tracking-tight">
+          💰 Personal Expense Tracker
+        </h1>
 
-        {loading && <p className="text-center text-blue-600 font-semibold">Loading data...</p>}
-        {error && <p className="text-center text-red-600 font-semibold">Error: {error}</p>}
+        {loading && <p className="text-center text-blue-600 font-semibold text-lg">Loading data...</p>}
+        {error && <p className="text-center text-red-600 font-semibold text-lg">Error: {error}</p>}
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
-          <div className="lg:col-span-2">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
+          <div className="lg:col-span-2 bg-gray-50 p-6 rounded-xl shadow-inner border border-gray-100">
             <ExpenseForm onSubmit={handleAddExpense} isLoading={loading} />
           </div>
-          <div className="lg:col-span-1">
+          <div className="lg:col-span-1 bg-gray-50 p-6 rounded-xl shadow-inner border border-gray-100">
             <ExpenseSummary monthlySummary={monthlySummary} />
           </div>
         </div>
 
-        <FilterControls onFilter={handleFilterExpenses} />
+        <div className="bg-gray-50 p-6 rounded-xl shadow-inner border border-gray-100 mb-8">
+          <FilterControls onFilter={handleFilterExpenses} />
+        </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
-          <div className="lg:col-span-2">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
+          <div className="lg:col-span-2 bg-gray-50 p-6 rounded-xl shadow-inner border border-gray-100">
             <ExpenseList expenses={expenses} onDelete={handleDeleteExpense} />
-          <div className="flex justify-between items-center mt-4">
-            <div>
-              Page {currentPage + 1} of {totalPages} (Total: {totalElements} items)
-            </div>
-            <div className="flex items-center space-x-2">
-              <label htmlFor="pageSize" className="text-gray-700">Items per page:</label>
-              <select
-                id="pageSize"
-                value={pageSize}
-                onChange={handlePageSizeChange}
-                className="shadow appearance-none border rounded py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-              >
-                <option value="5">5</option>
-                <option value="10">10</option>
-                <option value="20">20</option>
-              </select>
-              <button
-                onClick={() => handlePageChange(currentPage - 1)}
-                disabled={currentPage === 0}
-                className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                Previous
-              </button>
-              <button
-                onClick={() => handlePageChange(currentPage + 1)}
-                disabled={currentPage === totalPages - 1}
-                className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                Next
-              </button>
+            <div className="flex justify-between items-center mt-6 p-4 bg-white rounded-lg shadow-md border border-gray-100">
+              <div className="text-gray-700 font-medium">
+                Page {currentPage + 1} of {totalPages} (Total: {totalElements} items)
+              </div>
+              <div className="flex items-center space-x-3">
+                <label htmlFor="pageSize" className="text-gray-700">Items per page:</label>
+                <select
+                  id="pageSize"
+                  value={pageSize}
+                  onChange={handlePageSizeChange}
+                  className="shadow-sm border border-gray-300 rounded-md py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                >
+                  <option value="5">5</option>
+                  <option value="10">10</option>
+                  <option value="20">20</option>
+                </select>
+                <button
+                  onClick={() => handlePageChange(currentPage - 1)}
+                  disabled={currentPage === 0}
+                  className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg focus:outline-none focus:shadow-outline disabled:opacity-50 disabled:cursor-not-allowed transition duration-200 ease-in-out transform hover:scale-105"
+                >
+                  Previous
+                </button>
+                <button
+                  onClick={() => handlePageChange(currentPage + 1)}
+                  disabled={currentPage === totalPages - 1}
+                  className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg focus:outline-none focus:shadow-outline disabled:opacity-50 disabled:cursor-not-allowed transition duration-200 ease-in-out transform hover:scale-105"
+                >
+                  Next
+                </button>
+              </div>
             </div>
           </div>
-          </div>
-          <div className="lg:col-span-1">
+          <div className="lg:col-span-1 bg-gray-50 p-6 rounded-xl shadow-inner border border-gray-100">
             <CategoryChart categorySummary={categorySummary} />
           </div>
         </div>
 
-        {/* New Spline Area Chart for Monthly Trend */}
-        <MonthlySplineChart monthlySummary={monthlySummary} />
+        <div className="bg-gray-50 p-6 rounded-xl shadow-inner border border-gray-100">
+          <MonthlySplineChart monthlySummary={monthlySummary} />
+        </div>
 
       </div>
     </div>

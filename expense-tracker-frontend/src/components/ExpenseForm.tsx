@@ -49,28 +49,29 @@ const ExpenseForm: React.FC<ExpenseFormProps> = ({ onSubmit, isLoading }) => {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="bg-white p-6 rounded-lg shadow-md mb-6">
-      <h2 className="text-2xl font-bold mb-4">Add New Expense</h2>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+    <form onSubmit={handleSubmit} className="p-6 bg-white rounded-lg shadow-md">
+      <h2 className="text-2xl font-bold text-gray-800 mb-6">Add New Expense</h2>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div>
-          <label htmlFor="amount" className="block text-gray-700 text-sm font-bold mb-2">Amount:</label>
+          <label htmlFor="amount" className="block text-gray-700 text-sm font-semibold mb-2">Amount:</label>
           <input
             type="number"
             id="amount"
             value={amount}
             onChange={(e) => setAmount(e.target.value)}
-            className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition duration-200 ease-in-out"
             step="0.01"
+            placeholder="e.g., 49.99"
           />
-          {errors.amount && <p className="text-red-500 text-xs italic">{errors.amount}</p>}
+          {errors.amount && <p className="text-red-500 text-xs italic mt-1">{errors.amount}</p>}
         </div>
         <div>
-          <label htmlFor="category" className="block text-gray-700 text-sm font-bold mb-2">Category:</label>
+          <label htmlFor="category" className="block text-gray-700 text-sm font-semibold mb-2">Category:</label>
           <select
             id="category"
             value={category}
             onChange={(e) => setCategory(e.target.value as ExpenseCategory)}
-            className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition duration-200 ease-in-out"
           >
             {Object.values(ExpenseCategory).map((cat) => (
               <option key={cat} value={cat}>{cat}</option>
@@ -78,34 +79,35 @@ const ExpenseForm: React.FC<ExpenseFormProps> = ({ onSubmit, isLoading }) => {
           </select>
         </div>
         <div className="md:col-span-2">
-          <label htmlFor="description" className="block text-gray-700 text-sm font-bold mb-2">Description:</label>
+          <label htmlFor="description" className="block text-gray-700 text-sm font-semibold mb-2">Description:</label>
           <input
             type="text"
             id="description"
             value={description}
             onChange={(e) => setDescription(e.target.value)}
-            className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition duration-200 ease-in-out"
+            placeholder="e.g., Monthly Netflix subscription"
           />
-          {errors.description && <p className="text-red-500 text-xs italic">{errors.description}</p>}
+          {errors.description && <p className="text-red-500 text-xs italic mt-1">{errors.description}</p>}
         </div>
         <div className="md:col-span-2">
-          <label htmlFor="date" className="block text-gray-700 text-sm font-bold mb-2">Date:</label>
+          <label htmlFor="date" className="block text-gray-700 text-sm font-semibold mb-2">Date:</label>
           <input
             type="date"
             id="date"
             value={date}
             onChange={(e) => setDate(e.target.value)}
-            className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition duration-200 ease-in-out"
           />
-          {errors.date && <p className="text-red-500 text-xs italic">{errors.date}</p>}
+          {errors.date && <p className="text-red-500 text-xs italic mt-1">{errors.date}</p>}
         </div>
       </div>
       <button
         type="submit"
-        className="mt-4 bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
+        className="mt-6 w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-lg focus:outline-none focus:shadow-outline transition duration-200 ease-in-out transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed"
         disabled={isLoading}
       >
-        {isLoading ? 'Adding...' : 'Add Expense'}
+        {isLoading ? 'Adding Expense...' : 'Add Expense'}
       </button>
     </form>
   );
