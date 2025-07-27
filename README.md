@@ -275,7 +275,7 @@ cors.allowed-origins=http://localhost:3000
 ## 📱 Screenshots
 
 ### Overall UI
-![Overall UI](UI-Screenshot.jpeg)
+![Overall UI](docs/UI-Screenshot.jpeg)
 
 
 
