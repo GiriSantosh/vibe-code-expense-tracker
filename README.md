@@ -18,6 +18,8 @@ This application allows users to track personal expenses, categorize spending, a
 - ✅ Interactive pie charts for data visualization
 - ✅ Responsive design for mobile and desktop
 - ✅ Real-time data updates
+- ✅ **Pagination for Expense List:** Efficiently browse through large sets of expenses.
+- ✅ **Quick Date Filters:** Easily filter expenses by last 7 days, 15 days, or 1 month.
 
 ### Technical Features
 - ✅ RESTful API architecture
