@@ -274,6 +274,11 @@ cors.allowed-origins=http://localhost:3000
 
 ## 📱 Screenshots
 
+### Overall UI
+![Overall UI](UI-Screenshot.jpeg)
+
+
+
 ### Dashboard View
 - Monthly expense summary cards
 - Category breakdown pie chart
