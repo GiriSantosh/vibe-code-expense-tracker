@@ -38,16 +38,7 @@ function App() {
   const handleFilterExpenses = (category?: ExpenseCategory, startDate?: string, endDate?: string) => {
     setCurrentPage(0); // Reset to first page on filter change
     fetchExpenses(category, startDate, endDate, 0, pageSize);
-    // Also update monthly summary based on the filtered date range
-    if (startDate && endDate) {
-      fetchMonthlySummary(startDate, endDate);
-    } else {
-      // If no date filter, fetch for current month
-      const today = new Date();
-      const firstDayOfMonth = new Date(today.getFullYear(), today.getMonth(), 1).toISOString().split('T')[0];
-      const lastDayOfMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0).toISOString().split('T')[0];
-      fetchMonthlySummary(firstDayOfMonth, lastDayOfMonth);
-    }
+    fetchMonthlySummary(startDate, endDate); // Always update monthly summary based on filter
   };
 
   const handlePageChange = (newPage: number) => {

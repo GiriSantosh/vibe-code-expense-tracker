@@ -77,7 +77,7 @@ export const useExpenses = () => {
     }
   };
 
-  const fetchMonthlySummary = async (startDate: string, endDate: string) => {
+  const fetchMonthlySummary = async (startDate?: string, endDate?: string) => {
     setLoading(true);
     setError(null);
     try {
