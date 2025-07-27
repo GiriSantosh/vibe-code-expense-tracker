@@ -66,6 +66,13 @@ This application allows users to track personal expenses, categorize spending, a
                                         └─────────────────┘
 ```
 
+## 📚 Documentation
+
+- [Architecture Overview](docs/architecture.md)
+- [API Documentation](docs/api-documentation.md)
+- [Database Schema](docs/architecture.md#database-schema)
+- [Testing Strategy](docs/architecture.md#testing-architecture)
+
 ## 📁 Project Structure
 
 ```
@@ -312,10 +319,14 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## 🙏 Acknowledgments
 
-- Built using modern web development best practices
-- Comprehensive testing approach for reliability
-- Clean architecture for maintainability
-- AI-assisted development for rapid prototyping
+*   Gemini
+*   Spring Boot Team
+*   React Community
+*   Tailwind CSS Team
+*   Recharts Contributors
+*   Axios Developers
+*   Jest and React Testing Library Teams
+*   All open-source contributors and communities that make this possible.
 
 ---
 
