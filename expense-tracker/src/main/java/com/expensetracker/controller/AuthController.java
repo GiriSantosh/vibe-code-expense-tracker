@@ -18,8 +18,8 @@ import java.io.UnsupportedEncodingException;
 @RequestMapping("/api/auth")
 public class AuthController {
 
-    @Value("${keycloak.auth-server-url:http://localhost:8081}")
-    private String keycloakUrl;
+    @Value("${keycloak.external-url:http://localhost:8081}")
+    private String keycloakExternalUrl;
     
     @Autowired
     private KeycloakAdminService keycloakAdminService;
@@ -55,7 +55,7 @@ public class AuthController {
         
         // Step 5: Direct Keycloak logout with backend redirect
         String backendRedirectUrl = "http://localhost:8080/api/auth/logout-complete";
-        String logoutUrl = keycloakUrl + "/realms/expense-tracker/protocol/openid-connect/logout?" +
+        String logoutUrl = keycloakExternalUrl + "/realms/expense-tracker/protocol/openid-connect/logout?" +
                 "client_id=expense-tracker-backend&" +
                 "post_logout_redirect_uri=" + java.net.URLEncoder.encode(backendRedirectUrl, "UTF-8");
         

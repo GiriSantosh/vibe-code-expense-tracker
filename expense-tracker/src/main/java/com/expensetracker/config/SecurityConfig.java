@@ -2,6 +2,7 @@ package com.expensetracker.config;
 
 import com.expensetracker.security.OAuth2LoginSuccessHandler;
 import com.expensetracker.security.EnhancedOidcLogoutSuccessHandler;
+import com.expensetracker.service.KeycloakAdminService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
@@ -41,6 +42,9 @@ public class SecurityConfig {
 
     @Autowired
     private ClientRegistrationRepository clientRegistrationRepository;
+
+    @Autowired
+    private KeycloakAdminService keycloakAdminService;
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
@@ -119,7 +123,7 @@ public class SecurityConfig {
 
     @Bean
     public LogoutSuccessHandler enhancedOidcLogoutSuccessHandler(ClientRegistrationRepository clientRegistrationRepository) {
-        return new EnhancedOidcLogoutSuccessHandler(clientRegistrationRepository);
+        return new EnhancedOidcLogoutSuccessHandler(clientRegistrationRepository, keycloakAdminService);
     }
 
     @Bean
