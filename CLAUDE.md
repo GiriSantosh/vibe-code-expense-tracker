@@ -1,7 +1,7 @@
 # GEMINI.md - Personal Expense Tracker (Phase 2)
 
 ## 🎯 Project Context & Development Philosophy
-This is a **security-first, rapid development** personal expense tracking application built with **high-quality standards**. The project demonstrates my ability to build production-ready applications quickly while maintaining **90%+ test coverage** and implementing **enterprise-grade security**.
+This is a **security-first, rapid development** personal expense tracking application built with **high-quality standards**. The project demonstrates my ability to build production-ready applications quickly while maintaining **70%+ test coverage** and implementing **enterprise-grade security**.
 
 ### **My Development Approach:**
 - **Quality over Speed (but still fast):** Comprehensive testing, clean architecture, security-first
@@ -161,7 +161,7 @@ const AuthContext = createContext<AuthContextType | null>(null);
 
 ## 🧪 Testing Philosophy & Standards
 
-### **Backend Testing (Target: 95%+ coverage)**
+### **Backend Testing (Target: 70%+ coverage)**
 ```java
 // Test structure I prefer
 @SpringBootTest
@@ -527,7 +527,7 @@ Creates a new expense for the authenticated user.
 
 ### **Key Implementation Priorities:**
 1. **Security First:** OAuth2 → AES-256-GCM → User Isolation
-2. **Test Coverage:** Maintain 90%+ throughout development
+2. **Test Coverage:** Maintain 70%+ throughout development
 3. **Documentation:** Update docs as features are implemented
 4. **Performance:** Monitor encryption overhead and optimize
 
@@ -554,7 +554,7 @@ Creates a new expense for the authenticated user.
 ### **Completed (Phase 1):**
 - ✅ Basic CRUD operations for expenses
 - ✅ Category management and analytics
-- ✅ 95% backend test coverage
+- ✅ 70% backend test coverage
 - ✅ 90% frontend test coverage
 - ✅ Responsive UI with Tailwind CSS
 
@@ -566,7 +566,7 @@ Creates a new expense for the authenticated user.
 - ✅ PostgreSQL migration completed (H2 only for tests)
 - ✅ Keycloak realm configured with password policies
 - ✅ Frontend tests fixed and passing (51% coverage - target met)
-- ✅ Backend tests passing with PostgreSQL (95%+ coverage maintained)
+- ✅ Backend tests passing with PostgreSQL (70%+ coverage maintained)
 - ✅ JSON circular reference issue fixed (@JsonIgnore annotations)
 - ✅ Dashboard functionality restored (real data, working charts, quick actions)
 - ✅ Local development setup (run-local.sh for IDE development)

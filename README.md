@@ -1179,17 +1179,29 @@ This has been an intensive journey from a simple expense tracker to a production
 
 ## 📱 Screenshots
 
+### Phase 1 Screenshots
 ### Overall UI
 ![Overall UI](docs/UI-Screenshot.jpeg)
 
 #### Latest UI
 ![Latest UI](docs/UI-Screenshot_2.jpeg)
 
-### Phase 2 Screenshots (Coming Soon)
-- **Login Flow:** Keycloak authentication screens
-- **User Profile:** Profile management interface
-- **Protected Dashboard:** Authenticated user experience
-- **Docker Dashboard:** Container monitoring interface
+### Phase 2 Screenshots
+#### Dashboard
+![Dashboard UI](docs/phase-2screenshot_Dashboard.jpeg)
+
+#### Add new Expense
+![Dashboard UI](docs/phase-2screenshot_addnewExpense.jpeg)
+
+#### User Profile View - with complete logout
+![Dashboard UI](docs/Phase-2_UserProfile_WithNuclearLogout.png)
+
+#### Login using keycloak
+![Dashboard UI](docs/Phase-2_login_KeyCloak.jpeg)
+
+#### Docker View
+![Dashboard UI](docs/Phase-2_docker_View.png)
+
 
 ### Dashboard View
 - Monthly expense summary cards
