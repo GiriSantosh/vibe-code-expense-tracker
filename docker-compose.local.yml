@@ -1,9 +1,5 @@
 version: '3.8'
 
-# Docker Compose configuration for local development
-# Only runs PostgreSQL and Keycloak in containers
-# Backend and Frontend run locally via IDE
-
 services:
   postgres:
     image: postgres:15
@@ -12,7 +8,6 @@ services:
       POSTGRES_DB: expense_tracker
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: password
-      POSTGRES_INITDB_ARGS: "--encoding=UTF8 --data-checksums"
     ports:
       - "5432:5432"
     volumes:
@@ -38,9 +33,7 @@ services:
       KC_DB_USERNAME: postgres
       KC_DB_PASSWORD: password
       KC_HOSTNAME_STRICT: false
-      KC_HOSTNAME_STRICT_HTTPS: false
       KC_HTTP_ENABLED: true
-      # Important: Configure for external access
       KC_HOSTNAME: localhost
       KC_HOSTNAME_PORT: 8081
     ports:

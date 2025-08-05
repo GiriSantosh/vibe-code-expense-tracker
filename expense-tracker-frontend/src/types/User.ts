@@ -26,5 +26,6 @@ export interface AuthContextType {
   isLoading: boolean;
   login: () => void;
   logout: () => void;
+  nuclearLogout: () => void;
   updateUser: (userData: Partial<User>) => void;
 }

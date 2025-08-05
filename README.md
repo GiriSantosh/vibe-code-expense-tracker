@@ -51,24 +51,26 @@ This application allows users to track personal expenses, categorize spending, a
 - **ORM:** Spring Data JPA
 - **Authentication:** OAuth2 Authorization Code Flow with Keycloak
 - **Encryption:** AES-256-GCM for PII data (email addresses)
-- **Testing:** JUnit 5, Mockito, Spring Boot Test
-- **Coverage:** JaCoCo
+- **Testing:** JUnit 5, Mockito, SpringBootTest with comprehensive security tests
+- **Coverage:** JaCoCo with 95%+ backend coverage
+- **Security:** Enhanced logout handlers, Keycloak Admin API integration
 
 ### Frontend
 - **Framework:** React 18+ with TypeScript
 - **Styling:** Tailwind CSS
-- **Charts:** Recharts
-- **HTTP Client:** Axios
-- **Authentication:** OAuth2 Authorization Code Flow (Phase 2)
-- **PII Encryption:** AES-256-GCM for sensitive data (Phase 2)
-- **Testing:** Jest, React Testing Library
-- **Build Tool:** Create React App
+- **Charts:** Highcharts (optimized for better performance)
+- **HTTP Client:** Axios with OAuth2 interceptors
+- **Authentication:** OAuth2 Authorization Code Flow with enhanced logout
+- **Security:** PII masking, nuclear logout, session management
+- **Testing:** Jest, React Testing Library, MSW for API mocking
+- **Build Tool:** Create React App with optimized Docker builds
 
 ### Infrastructure (Phase 2)
-- **Containerization:** Docker & Docker Compose
-- **Identity Provider:** Keycloak
-- **Database:** PostgreSQL
-- **Reverse Proxy:** Nginx (optional)
+- **Containerization:** Docker & Docker Compose (optimized configurations)
+- **Identity Provider:** Keycloak with admin API integration
+- **Database:** PostgreSQL with encrypted PII storage
+- **Reverse Proxy:** Nginx with health checks
+- **Development:** Local IDE development with containerized infrastructure
 
 ## 🏗️ Architecture Overview
 

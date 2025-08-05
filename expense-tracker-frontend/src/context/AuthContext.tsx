@@ -45,22 +45,27 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const logout = () => {
     setUser(null);
     
-    // Clear all cookies - this is the key fix!
-    document.cookie.split(";").forEach(cookie => {
-      const eqPos = cookie.indexOf("=");
-      const name = eqPos > -1 ? cookie.substr(0, eqPos).trim() : cookie.trim();
-      // Clear for current domain
-      document.cookie = `${name}=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/`;
-      // Clear for parent domain (in case of subdomain cookies)
-      document.cookie = `${name}=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/;domain=${window.location.hostname}`;
-    });
-    
-    // Clear localStorage and sessionStorage
+    // Clear browser storage
     localStorage.clear();
     sessionStorage.clear();
     
-    // Now redirect to backend logout endpoint which will handle Keycloak logout
+    // Use the proper OIDC logout endpoint - Spring Security + OidcClientInitiatedLogoutSuccessHandler will handle:
+    // 1. Local session invalidation
+    // 2. Cookie clearing
+    // 3. Redirect to Keycloak logout
+    // 4. Keycloak SSO session termination
+    // 5. Redirect back to frontend
     window.location.href = `${process.env.REACT_APP_API_BASE_URL || 'http://localhost:8080'}/logout`;
+  };
+  
+  // Nuclear logout for testing (fallback)
+  const nuclearLogout = () => {
+    setUser(null);
+    localStorage.clear();
+    sessionStorage.clear();
+    
+    // Use the nuclear logout endpoint for manual session clearing
+    window.location.href = `${process.env.REACT_APP_API_BASE_URL || 'http://localhost:8080'}/api/auth/nuclear-logout`;
   };
 
   const updateUser = (userData: Partial<User>) => {
@@ -75,6 +80,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     isLoading,
     login,
     logout,
+    nuclearLogout,
     updateUser
   };
 

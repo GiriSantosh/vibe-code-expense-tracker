@@ -1,6 +1,7 @@
 package com.expensetracker.config;
 
 import com.expensetracker.security.OAuth2LoginSuccessHandler;
+import com.expensetracker.security.EnhancedOidcLogoutSuccessHandler;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
@@ -13,14 +14,13 @@ import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.core.authority.mapping.GrantedAuthoritiesMapper;
 import org.springframework.security.core.authority.mapping.SimpleAuthorityMapper;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.logout.LogoutSuccessHandler;
 import org.springframework.security.oauth2.client.web.DefaultOAuth2AuthorizationRequestResolver;
 import org.springframework.security.oauth2.client.web.OAuth2AuthorizationRequestResolver;
 import org.springframework.security.oauth2.client.registration.ClientRegistrationRepository;
-import org.springframework.security.oauth2.core.endpoint.OAuth2AuthorizationRequest;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
-
 import jakarta.servlet.http.HttpServletRequest;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -38,7 +38,7 @@ public class SecurityConfig {
 
     @Autowired
     private OAuth2LoginSuccessHandler oAuth2LoginSuccessHandler;
-    
+
     @Autowired
     private ClientRegistrationRepository clientRegistrationRepository;
 
@@ -56,7 +56,8 @@ public class SecurityConfig {
                 .sessionManagement(session -> session
                         .sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED)
                         .maximumSessions(1)
-                        .maxSessionsPreventsLogin(false))
+                        .maxSessionsPreventsLogin(false)
+                )
                 .oauth2Login(oauth2 -> oauth2
                         .defaultSuccessUrl("http://localhost:3000/", true)
                         .successHandler(oAuth2LoginSuccessHandler)
@@ -67,23 +68,24 @@ public class SecurityConfig {
                 )
                 .exceptionHandling(exceptions -> exceptions
                         .authenticationEntryPoint((request, response, authEx) -> {
-                            // For API requests, return 401 instead of redirect
                             if (request.getRequestURI().startsWith("/api/")) {
                                 response.setStatus(401);
                                 response.setContentType("application/json");
                                 response.getWriter().write("{\"error\":\"Unauthorized\",\"message\":\"Please authenticate via OAuth2\"}");
                             } else {
-                                // For browser requests, redirect to OAuth2
                                 response.sendRedirect("/oauth2/authorization/keycloak");
                             }
                         })
                 )
                 .logout(logout -> logout
                         .logoutUrl("/logout")
-                        .logoutSuccessUrl("http://localhost:8081/realms/expense-tracker/protocol/openid-connect/logout?post_logout_redirect_uri=http://localhost:3000/")
+                        .logoutSuccessHandler(enhancedOidcLogoutSuccessHandler(clientRegistrationRepository))
                         .invalidateHttpSession(true)
-                        .deleteCookies("JSESSIONID", "KEYCLOAK_SESSION", "KEYCLOAK_IDENTITY", "KEYCLOAK_REMEMBER_ME", "AUTH_SESSION_ID", "KC_RESTART")
                         .clearAuthentication(true)
+                        .deleteCookies(
+                                "JSESSIONID", "KEYCLOAK_SESSION", "KEYCLOAK_IDENTITY",
+                                "KEYCLOAK_REMEMBER_ME", "AUTH_SESSION_ID", "KC_RESTART"
+                        )
                 );
         return http.build();
     }
@@ -92,19 +94,18 @@ public class SecurityConfig {
     public OAuth2AuthorizationRequestResolver authorizationRequestResolver() {
         DefaultOAuth2AuthorizationRequestResolver authorizationRequestResolver =
                 new DefaultOAuth2AuthorizationRequestResolver(clientRegistrationRepository, "/oauth2/authorization");
-        
         authorizationRequestResolver.setAuthorizationRequestCustomizer(customizer -> {
             Map<String, Object> additionalParameters = new HashMap<>();
             // Force re-authentication - user will see login screen even if SSO session exists
             additionalParameters.put("prompt", "login");
-            // Also try max_age=0 to force fresh authentication
+            // Force fresh authentication - no cached credentials
             additionalParameters.put("max_age", "0");
+            // Force account selection to bypass SSO
+            additionalParameters.put("kc_idp_hint", "oidc");
+            // Additional parameter to force re-authentication
+            additionalParameters.put("login_hint", "");
             customizer.additionalParameters(additionalParameters);
-            
-            // Debug logging
-            System.out.println("OAuth2 Authorization Request - Additional Parameters: " + additionalParameters);
         });
-        
         return authorizationRequestResolver;
     }
 
@@ -114,6 +115,11 @@ public class SecurityConfig {
         authorityMapper.setConvertToUpperCase(true);
         authorityMapper.setDefaultAuthority("ROLE_USER");
         return authorityMapper;
+    }
+
+    @Bean
+    public LogoutSuccessHandler enhancedOidcLogoutSuccessHandler(ClientRegistrationRepository clientRegistrationRepository) {
+        return new EnhancedOidcLogoutSuccessHandler(clientRegistrationRepository);
     }
 
     @Bean
