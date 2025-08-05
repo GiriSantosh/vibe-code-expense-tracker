@@ -1,0 +1,277 @@
+package com.expensetracker.integration;
+
+import com.expensetracker.controller.TestSecurityConfig;
+import com.expensetracker.model.User;
+import com.expensetracker.model.UserPreferences;
+import com.expensetracker.repository.UserRepository;
+import com.expensetracker.service.EncryptionService;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureWebMvc;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.context.annotation.Import;
+import org.springframework.http.MediaType;
+import org.springframework.security.test.context.support.WithMockUser;
+import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.transaction.annotation.Transactional;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+
+@SpringBootTest
+@AutoConfigureWebMvc
+@ActiveProfiles("test")
+@Transactional
+@Import(TestSecurityConfig.class)
+@DisplayName("OAuth2 Security Integration Tests")
+public class OAuth2SecurityIntegrationTest {
+
+    @Autowired
+    private MockMvc mockMvc;
+
+    @Autowired
+    private UserRepository userRepository;
+
+    @Autowired
+    private EncryptionService encryptionService;
+
+    @Autowired
+    private ObjectMapper objectMapper;
+
+    private User testUser;
+
+    @BeforeEach
+    void setUp() {
+        // Clean up any existing users
+        userRepository.deleteAll();
+
+        // Create test user
+        testUser = new User("testuser@example.com", "test@example.com", "Test", "User");
+        testUser.setEmailVerified(true);
+        
+        UserPreferences preferences = new UserPreferences(testUser);
+        testUser.setPreferences(preferences);
+        
+        testUser = userRepository.save(testUser);
+    }
+
+    @Test
+    @DisplayName("Should require authentication for protected endpoints")
+    void whenAccessProtectedEndpointsWithoutAuth_thenReturn401() throws Exception {
+        mockMvc.perform(get("/api/me"))
+                .andExpect(status().isUnauthorized());
+
+        mockMvc.perform(get("/api/expenses"))
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    @WithMockUser(username = "testuser@example.com", roles = {"USER"})
+    @DisplayName("Should allow access to user endpoints with USER role")
+    void whenAccessUserEndpointsWithUserRole_thenAllow() throws Exception {
+        mockMvc.perform(get("/api/me"))
+                .andExpect(status().isOk());
+
+        mockMvc.perform(get("/api/expenses"))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    @WithMockUser(username = "testuser@example.com", roles = {"ADMIN"})
+    @DisplayName("Should allow access to user endpoints with ADMIN role")
+    void whenAccessUserEndpointsWithAdminRole_thenAllow() throws Exception {
+        mockMvc.perform(get("/api/me"))
+                .andExpect(status().isOk());
+
+        mockMvc.perform(get("/api/expenses"))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    @WithMockUser(username = "testuser@example.com", roles = {"GUEST"})
+    @DisplayName("Should deny access with insufficient roles")
+    void whenAccessWithInsufficientRole_thenDeny() throws Exception {
+        mockMvc.perform(get("/api/me"))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    @WithMockUser(username = "testuser@example.com", roles = {"USER"})
+    @DisplayName("Should encrypt email in database and decrypt in response")
+    void whenAccessUserData_thenEmailIsEncryptedInDBButDecryptedInResponse() throws Exception {
+        // When - Get user data via API
+        mockMvc.perform(get("/api/me"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.email").value("test@example.com"))
+                .andExpect(jsonPath("$.username").value("testuser@example.com"));
+
+        // Then - Verify email is encrypted in database
+        User userFromDB = userRepository.findByUsername("testuser@example.com").orElseThrow();
+        
+        // The encrypted email in DB should be different from plain text
+        // Note: We can't directly access the encrypted field without bypassing JPA converter
+        // But we can verify that the decryption process works by checking the getter
+        assertThat(userFromDB.getEmail()).isEqualTo("test@example.com"); // Should be decrypted by converter
+    }
+
+    @Test
+    @WithMockUser(username = "testuser@example.com", roles = {"USER"})
+    @DisplayName("Should update user preferences and persist changes")
+    void whenUpdateUserPreferences_thenPersistChanges() throws Exception {
+        // Given
+        String updateJson = """
+            {
+                "currency": "EUR",
+                "theme": "dark",
+                "enableNotifications": false
+            }
+            """;
+
+        // When
+        mockMvc.perform(put("/api/me/preferences")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(updateJson))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.currency").value("EUR"))
+                .andExpect(jsonPath("$.theme").value("dark"))
+                .andExpect(jsonPath("$.enableNotifications").value(false));
+
+        // Then - Verify changes are persisted
+        User updatedUser = userRepository.findByUsername("testuser@example.com").orElseThrow();
+        assertThat(updatedUser.getPreferences().getCurrency()).isEqualTo("EUR");
+        assertThat(updatedUser.getPreferences().getTheme()).isEqualTo("dark");
+        assertThat(updatedUser.getPreferences().getEnableNotifications()).isFalse();
+    }
+
+    @Test
+    @WithMockUser(username = "nonexistent@example.com", roles = {"USER"})
+    @DisplayName("Should handle requests for non-existent users")
+    void whenAccessWithNonExistentUser_thenHandleGracefully() throws Exception {
+        mockMvc.perform(get("/api/me"))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
+    @DisplayName("Should allow access to public endpoints")
+    void whenAccessPublicEndpoints_thenAllow() throws Exception {
+        // OAuth2 endpoints should be accessible
+        mockMvc.perform(get("/oauth2/authorization/keycloak"))
+                .andExpect(status().is3xxRedirection()); // Should redirect to Keycloak
+
+        // Error endpoints should be accessible
+        mockMvc.perform(get("/error"))
+                .andExpect(status().isNotFound()); // No error page defined, but endpoint is accessible
+    }
+
+    @Test
+    @WithMockUser(username = "testuser@example.com", roles = {"USER"})
+    @DisplayName("Should handle concurrent requests safely")
+    void whenConcurrentRequests_thenHandleSafely() throws Exception {
+        // This test simulates concurrent access to ensure thread safety
+        
+        // Multiple preference updates
+        String updateJson1 = """
+            {
+                "currency": "EUR"
+            }
+            """;
+        
+        String updateJson2 = """
+            {
+                "theme": "dark"
+            }
+            """;
+
+        // Execute concurrent requests
+        mockMvc.perform(put("/api/me/preferences")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(updateJson1))
+                .andExpect(status().isOk());
+
+        mockMvc.perform(put("/api/me/preferences")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(updateJson2))
+                .andExpect(status().isOk());
+
+        // Verify final state
+        mockMvc.perform(get("/api/me/preferences"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.currency").value("EUR"))
+                .andExpect(jsonPath("$.theme").value("dark"));
+    }
+
+    @Test
+    @WithMockUser(username = "testuser@example.com", roles = {"USER"})
+    @DisplayName("Should validate and sanitize user input")
+    void whenUpdateWithInvalidInput_thenValidateAndSanitize() throws Exception {
+        // Test with potentially malicious input
+        String maliciousJson = """
+            {
+                "firstName": "<script>alert('xss')</script>",
+                "lastName": "'; DROP TABLE users; --",
+                "preferences": {
+                    "currency": "INVALID_CURRENCY_CODE_THAT_IS_TOO_LONG"
+                }
+            }
+            """;
+
+        // Should either sanitize or reject
+        mockMvc.perform(put("/api/me")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(maliciousJson))
+                .andExpect(status().isOk()); // May succeed with sanitized data
+
+        // Verify data integrity
+        User updatedUser = userRepository.findByUsername("testuser@example.com").orElseThrow();
+        assertThat(updatedUser.getFirstName()).doesNotContain("<script>");
+        assertThat(updatedUser.getLastName()).doesNotContain("DROP TABLE");
+    }
+
+    @Test
+    @WithMockUser(username = "testuser@example.com", roles = {"USER"})
+    @DisplayName("Should handle large payloads appropriately")
+    void whenLargePayload_thenHandleAppropriately() throws Exception {
+        // Create a large preference update
+        StringBuilder largeJson = new StringBuilder("{");
+        largeJson.append("\"firstName\": \"").append("A".repeat(1000)).append("\",");
+        largeJson.append("\"lastName\": \"").append("B".repeat(1000)).append("\"");
+        largeJson.append("}");
+
+        // Should handle or reject appropriately
+        mockMvc.perform(put("/api/me")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(largeJson.toString()))
+                .andExpect(status().isOk()); // Or 400 if validation rejects
+    }
+
+    @Test
+    @WithMockUser(username = "testuser@example.com", roles = {"USER"})
+    @DisplayName("Should maintain audit trail for user actions")
+    void whenUserActions_thenMaintainAuditTrail() throws Exception {
+        // Record initial state
+        mockMvc.perform(get("/api/me"))
+                .andExpect(status().isOk());
+
+        // Perform updates
+        String updateJson = """
+            {
+                "firstName": "Updated"
+            }
+            """;
+
+        mockMvc.perform(put("/api/me")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(updateJson))
+                .andExpect(status().isOk());
+
+        // Verify audit information (lastLoginAt should be updated)
+        User updatedUser = userRepository.findByUsername("testuser@example.com").orElseThrow();
+        assertThat(updatedUser.getFirstName()).isEqualTo("Updated");
+        // In a real application, you might have audit logs or timestamps to verify
+    }
+}

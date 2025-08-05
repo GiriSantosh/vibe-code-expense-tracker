@@ -1,5 +1,6 @@
 package com.expensetracker.controller;
 
+import com.expensetracker.config.SecurityConfig;
 import com.expensetracker.model.Expense;
 import com.expensetracker.model.ExpenseCategory;
 import com.expensetracker.service.ExpenseService;
@@ -10,7 +11,9 @@ import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import com.expensetracker.exception.InvalidInputException;
 import com.expensetracker.exception.ResourceNotFoundException;
 import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
+import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.web.servlet.MockMvc;
 
 import org.springframework.data.domain.Page;
@@ -27,8 +30,11 @@ import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+import org.springframework.test.context.ActiveProfiles;
 
-@WebMvcTest(ExpenseController.class)
+@WebMvcTest(com.expensetracker.controller.ExpenseController.class)
+@Import({com.expensetracker.controller.TestSecurityConfig.class})
+@ActiveProfiles("test")
 public class ExpenseControllerTest {
 
     @Autowired
@@ -41,12 +47,13 @@ public class ExpenseControllerTest {
     private ObjectMapper objectMapper;
 
     @Test
+    @WithMockUser(username = "user", roles = {"USER"})
     public void whenGetAllExpenses_thenReturnJsonArray() throws Exception {
         // given
         Expense expense1 = new Expense(new BigDecimal("10.00"), ExpenseCategory.FOOD, "Lunch", LocalDate.now());
         Expense expense2 = new Expense(new BigDecimal("20.00"), ExpenseCategory.TRANSPORTATION, "Bus fare", LocalDate.now());
         Page<Expense> allExpensesPage = new PageImpl<>(Arrays.asList(expense1, expense2));
-        when(expenseService.getAllExpenses(any(Pageable.class))).thenReturn(allExpensesPage);
+        when(expenseService.getAllExpenses(any(), any(Pageable.class))).thenReturn(allExpensesPage);
 
         // when & then
         mockMvc.perform(get("/api/expenses"))
@@ -58,10 +65,11 @@ public class ExpenseControllerTest {
     }
 
     @Test
+    @WithMockUser(username = "user", roles = {"USER"})
     public void whenPostExpense_thenReturnCreatedExpense() throws Exception {
         // given
         Expense expense = new Expense(new BigDecimal("10.00"), ExpenseCategory.FOOD, "Lunch", LocalDate.now());
-        when(expenseService.createExpense(any(Expense.class))).thenReturn(expense);
+        when(expenseService.createExpense(any(), any(Expense.class))).thenReturn(expense);
 
         // when & then
         mockMvc.perform(post("/api/expenses")
@@ -72,10 +80,11 @@ public class ExpenseControllerTest {
     }
 
     @Test
+    @WithMockUser(username = "user", roles = {"USER"})
     public void whenPostExpense_thenReturnsBadRequest() throws Exception {
         // given
         Expense expense = new Expense(new BigDecimal("-10.00"), ExpenseCategory.FOOD, "Lunch", LocalDate.now()); // Invalid amount
-        when(expenseService.createExpense(any(Expense.class))).thenThrow(new InvalidInputException("Amount must be positive"));
+        when(expenseService.createExpense(any(), any(Expense.class))).thenThrow(new InvalidInputException("Amount must be positive"));
 
         // when & then
         mockMvc.perform(post("/api/expenses")
@@ -85,10 +94,11 @@ public class ExpenseControllerTest {
     }
 
     @Test
+    @WithMockUser(username = "user", roles = {"USER"})
     public void whenGetExpenseById_thenReturnExpense() throws Exception {
         // given
         Expense expense = new Expense(new BigDecimal("10.00"), ExpenseCategory.FOOD, "Lunch", LocalDate.now());
-        when(expenseService.getExpenseById(1L)).thenReturn(expense);
+        when(expenseService.getExpenseById(any(), any(Long.class))).thenReturn(expense);
 
         // when & then
         mockMvc.perform(get("/api/expenses/1"))
@@ -97,9 +107,10 @@ public class ExpenseControllerTest {
     }
 
     @Test
+    @WithMockUser(username = "user", roles = {"USER"})
     public void whenGetExpenseById_thenReturnsNotFound() throws Exception {
         // given
-        when(expenseService.getExpenseById(1L)).thenThrow(new ResourceNotFoundException("Expense not found"));
+        when(expenseService.getExpenseById(any(), any(Long.class))).thenThrow(new ResourceNotFoundException("Expense not found"));
 
         // when & then
         mockMvc.perform(get("/api/expenses/1"))
@@ -107,6 +118,7 @@ public class ExpenseControllerTest {
     }
 
     @Test
+    @WithMockUser(username = "user", roles = {"USER"})
     public void whenDeleteExpense_thenReturnNoContent() throws Exception {
         // when & then
         mockMvc.perform(delete("/api/expenses/1"))
@@ -114,9 +126,10 @@ public class ExpenseControllerTest {
     }
 
     @Test
+    @WithMockUser(username = "user", roles = {"USER"})
     public void whenDeleteExpense_thenReturnsNotFound() throws Exception {
         // given
-        doThrow(new ResourceNotFoundException("Expense not found")).when(expenseService).deleteExpense(1L);
+        doThrow(new ResourceNotFoundException("Expense not found")).when(expenseService).deleteExpense(any(), any(Long.class));
 
         // when & then
         mockMvc.perform(delete("/api/expenses/1"))

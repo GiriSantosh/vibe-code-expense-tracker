@@ -1,0 +1,221 @@
+package com.expensetracker;
+
+import com.expensetracker.controller.TestSecurityConfig;
+import com.expensetracker.model.Expense;
+import com.expensetracker.model.ExpenseCategory;
+import com.expensetracker.model.User;
+import com.expensetracker.model.UserPreferences;
+import com.expensetracker.repository.ExpenseRepository;
+import com.expensetracker.repository.UserRepository;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.context.annotation.Import;
+import org.springframework.http.MediaType;
+import org.springframework.security.test.context.support.WithMockUser;
+import org.springframework.test.annotation.DirtiesContext;
+import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.web.servlet.MockMvc;
+
+import java.math.BigDecimal;
+import java.time.LocalDate;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+
+@SpringBootTest
+@AutoConfigureMockMvc
+@DirtiesContext(classMode = DirtiesContext.ClassMode.BEFORE_EACH_TEST_METHOD)
+@ActiveProfiles("test")
+@WithMockUser(username = "user", roles = {"USER"})
+public class ExpenseIntegrationTest {
+
+    @Autowired
+    private MockMvc mockMvc;
+
+    @Autowired
+    private ExpenseRepository expenseRepository;
+
+    @Autowired
+    private UserRepository userRepository;
+
+    private ObjectMapper objectMapper;
+    private User testUser;
+
+    @BeforeEach
+    void setUp() {
+        // Clean up
+        expenseRepository.deleteAll();
+        userRepository.deleteAll();
+        
+        // Create test user
+        testUser = new User("user", "user@example.com", "Test", "User");
+        UserPreferences preferences = new UserPreferences(testUser);
+        testUser.setPreferences(preferences);
+        testUser = userRepository.save(testUser);
+        
+        objectMapper = new ObjectMapper();
+        objectMapper.registerModule(new JavaTimeModule());
+        objectMapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
+    }
+
+    @Test
+    void testCreateExpense() throws Exception {
+        Expense expense = new Expense(new BigDecimal("50.00"), ExpenseCategory.FOOD, "Dinner", LocalDate.now());
+
+        mockMvc.perform(post("/api/expenses")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(expense)))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.description").value("Dinner"))
+                .andExpect(jsonPath("$.amount").value(50.00));
+
+        assertThat(expenseRepository.findAll()).hasSize(1);
+    }
+
+    @Test
+    void testGetAllExpenses() throws Exception {
+        // Create expenses with user
+        Expense expense1 = new Expense(new BigDecimal("10.00"), ExpenseCategory.FOOD, "Lunch", LocalDate.now());
+        expense1.setUser(testUser);
+        Expense expense2 = new Expense(new BigDecimal("20.00"), ExpenseCategory.TRANSPORTATION, "Bus", LocalDate.now());
+        expense2.setUser(testUser);
+        
+        expenseRepository.save(expense1);
+        expenseRepository.save(expense2);
+
+        mockMvc.perform(get("/api/expenses"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content.length()").value(2))
+                .andExpect(jsonPath("$.totalPages").value(1))
+                .andExpect(jsonPath("$.totalElements").value(2));
+    }
+
+    @Test
+    void testGetExpenseById() throws Exception {
+        Expense expense = new Expense(new BigDecimal("25.00"), ExpenseCategory.FOOD, "Lunch", LocalDate.now());
+        expense.setUser(testUser);
+        expense = expenseRepository.save(expense);
+
+        mockMvc.perform(get("/api/expenses/" + expense.getId()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.description").value("Lunch"))
+                .andExpect(jsonPath("$.amount").value(25.00));
+    }
+
+    @Test
+    void testGetExpenseByIdNotFound() throws Exception {
+        mockMvc.perform(get("/api/expenses/999"))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
+    void testDeleteExpense() throws Exception {
+        Expense expense = new Expense(new BigDecimal("15.00"), ExpenseCategory.FOOD, "Snack", LocalDate.now());
+        expense.setUser(testUser);
+        expense = expenseRepository.save(expense);
+
+        mockMvc.perform(delete("/api/expenses/" + expense.getId()))
+                .andExpect(status().isNoContent());
+
+        assertThat(expenseRepository.findAll()).hasSize(0);
+    }
+
+    @Test
+    void testDeleteExpenseNotFound() throws Exception {
+        mockMvc.perform(delete("/api/expenses/999"))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
+    void testCreateExpenseWithInvalidData() throws Exception {
+        // Missing required fields
+        String invalidExpense = "{}";
+
+        mockMvc.perform(post("/api/expenses")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(invalidExpense))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void testGetExpensesByCategory() throws Exception {
+        Expense foodExpense = new Expense(new BigDecimal("30.00"), ExpenseCategory.FOOD, "Restaurant", LocalDate.now());
+        foodExpense.setUser(testUser);
+        Expense transportExpense = new Expense(new BigDecimal("15.00"), ExpenseCategory.TRANSPORTATION, "Taxi", LocalDate.now());
+        transportExpense.setUser(testUser);
+        
+        expenseRepository.save(foodExpense);
+        expenseRepository.save(transportExpense);
+
+        mockMvc.perform(get("/api/expenses")
+                .param("category", "FOOD"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content.length()").value(1))
+                .andExpect(jsonPath("$.content[0].category").value("FOOD"));
+    }
+
+    @Test
+    void testGetExpensesByDateRange() throws Exception {
+        LocalDate today = LocalDate.now();
+        LocalDate yesterday = today.minusDays(1);
+        
+        Expense todayExpense = new Expense(new BigDecimal("20.00"), ExpenseCategory.FOOD, "Today", today);
+        todayExpense.setUser(testUser);
+        Expense yesterdayExpense = new Expense(new BigDecimal("25.00"), ExpenseCategory.FOOD, "Yesterday", yesterday);
+        yesterdayExpense.setUser(testUser);
+        
+        expenseRepository.save(todayExpense);
+        expenseRepository.save(yesterdayExpense);
+
+        mockMvc.perform(get("/api/expenses")
+                .param("startDate", yesterday.toString())
+                .param("endDate", today.toString()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content.length()").value(2));
+    }
+
+    @Test
+    void testGetCategorySummary() throws Exception {
+        Expense foodExpense1 = new Expense(new BigDecimal("15.00"), ExpenseCategory.FOOD, "Food1", LocalDate.now());
+        foodExpense1.setUser(testUser);
+        Expense foodExpense2 = new Expense(new BigDecimal("10.00"), ExpenseCategory.FOOD, "Food2", LocalDate.now());
+        foodExpense2.setUser(testUser);
+        Expense transportExpense = new Expense(new BigDecimal("20.00"), ExpenseCategory.TRANSPORTATION, "Transport", LocalDate.now());
+        transportExpense.setUser(testUser);
+        
+        expenseRepository.save(foodExpense1);
+        expenseRepository.save(foodExpense2);
+        expenseRepository.save(transportExpense);
+
+        mockMvc.perform(get("/api/expenses/category-summary"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()").value(2));
+    }
+
+    @Test
+    void testGetMonthlySummary() throws Exception {
+        LocalDate currentMonth = LocalDate.now().withDayOfMonth(1);
+        LocalDate nextMonth = currentMonth.plusMonths(1);
+        
+        Expense currentMonthExpense = new Expense(new BigDecimal("100.00"), ExpenseCategory.FOOD, "Current", currentMonth.plusDays(5));
+        currentMonthExpense.setUser(testUser);
+        Expense nextMonthExpense = new Expense(new BigDecimal("50.00"), ExpenseCategory.FOOD, "Next", nextMonth.plusDays(5));
+        nextMonthExpense.setUser(testUser);
+        
+        expenseRepository.save(currentMonthExpense);
+        expenseRepository.save(nextMonthExpense);
+
+        mockMvc.perform(get("/api/expenses/monthly-summary")
+                .param("startDate", currentMonth.toString())
+                .param("endDate", nextMonth.plusMonths(1).toString()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()").value(2));
+    }
+}

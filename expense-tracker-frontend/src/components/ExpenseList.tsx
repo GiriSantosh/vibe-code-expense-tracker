@@ -8,10 +8,13 @@ interface ExpenseListProps {
 }
 
 const ExpenseList: React.FC<ExpenseListProps> = ({ expenses, onDelete }) => {
+  // Defensive check for undefined/null expenses
+  const safeExpenses = expenses || [];
+  
   return (
     <div className="p-6 bg-white rounded-lg shadow-md">
       <h2 className="text-2xl font-bold text-gray-800 mb-6">Expense List</h2>
-      {expenses.length === 0 ? (
+      {safeExpenses.length === 0 ? (
         <p className="text-gray-600">No expenses to display for the selected criteria.</p>
       ) : (
         <div className="overflow-x-auto shadow-md rounded-lg">
@@ -36,8 +39,12 @@ const ExpenseList: React.FC<ExpenseListProps> = ({ expenses, onDelete }) => {
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {expenses.map((expense) => (
-                <ExpenseItem key={expense.id} expense={expense} onDelete={onDelete} />
+              {safeExpenses.map((expense, index) => (
+                <ExpenseItem 
+                  key={expense.id || `expense-${index}-${expense.date}-${expense.amount}`} 
+                  expense={expense} 
+                  onDelete={onDelete} 
+                />
               ))}
             </tbody>
           </table>

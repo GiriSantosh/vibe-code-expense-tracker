@@ -17,7 +17,9 @@ interface CategoryChartProps {
 }
 
 const CategoryChart: React.FC<CategoryChartProps> = ({ categorySummary }) => {
-  const data = categorySummary.map(item => ({
+  // Defensive check for undefined/null categorySummary
+  const safeCategorySummary = categorySummary || [];
+  const data = safeCategorySummary.map(item => ({
     name: item.category,
     y: item.total,
   }));

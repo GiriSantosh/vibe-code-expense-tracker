@@ -17,7 +17,9 @@ public class DataInitializer {
     @Bean
     CommandLineRunner initDatabase(ExpenseRepository repository) {
         return args -> {
-            if (repository.count() == 0) {
+            // Skip data initialization - data will be created by authenticated users through OAuth2
+            // This prevents user_id constraint violations since we don't have users during startup
+            if (false) {
                 System.out.println("Initializing database with sample data...");
 
                 // June 2025 Expenses

@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
-import axios from 'axios';
 import { Expense } from '../types/Expense';
 import { ExpenseCategory } from '../types/ExpenseCategory';
+import { apiService } from '../services/apiService';
 
 interface MonthlySummary {
   year: number;
@@ -13,8 +13,6 @@ interface CategorySummary {
   category: ExpenseCategory;
   total: number;
 }
-
-const API_BASE_URL = 'http://localhost:8080/api/expenses';
 
 export const useExpenses = () => {
   const [expenses, setExpenses] = useState<Expense[]>([]);
@@ -34,12 +32,15 @@ export const useExpenses = () => {
       if (startDate) params.startDate = startDate;
       if (endDate) params.endDate = endDate;
 
-      const response = await axios.get<any>(API_BASE_URL, { params });
-      setExpenses(response.data.content);
-      setTotalPages(response.data.totalPages);
-      setTotalElements(response.data.totalElements);
+      const response = await apiService.getAllExpenses(params);
+      console.log('useExpenses - API response:', response);
+      console.log('useExpenses - Setting expenses to:', response.content || []);
+      setExpenses(response.content || []);
+      setTotalPages(response.totalPages || 0);
+      setTotalElements(response.totalElements || 0);
     } catch (err) {
       setError('Failed to fetch expenses.');
+      setExpenses([]);
       console.error(err);
     } finally {
       setLoading(false);
@@ -50,9 +51,9 @@ export const useExpenses = () => {
     setLoading(true);
     setError(null);
     try {
-      const response = await axios.post<Expense>(API_BASE_URL, expense);
-      setExpenses((prev) => [...prev, response.data]);
-      return response.data;
+      const newExpense = await apiService.createExpense(expense);
+      setExpenses((prev) => [...(prev || []), newExpense]);
+      return newExpense;
     } catch (err) {
       setError('Failed to add expense.');
       console.error(err);
@@ -66,8 +67,8 @@ export const useExpenses = () => {
     setLoading(true);
     setError(null);
     try {
-      await axios.delete(`${API_BASE_URL}/${id}`);
-      setExpenses((prev) => prev.filter((exp) => exp.id !== id));
+      await apiService.deleteExpense(id);
+      setExpenses((prev) => (prev || []).filter((exp) => exp.id !== id));
     } catch (err) {
       setError('Failed to delete expense.');
       console.error(err);
@@ -81,12 +82,14 @@ export const useExpenses = () => {
     setLoading(true);
     setError(null);
     try {
-      const response = await axios.get<MonthlySummary[]>(`${API_BASE_URL}/summary`, {
-        params: { startDate, endDate },
-      });
-      setMonthlySummary(response.data);
+      const summary = await apiService.getMonthlySummary(
+        startDate || new Date().toISOString().split('T')[0],
+        endDate || new Date().toISOString().split('T')[0]
+      );
+      setMonthlySummary(summary || []);
     } catch (err) {
       setError('Failed to fetch monthly summary.');
+      setMonthlySummary([]);
       console.error(err);
     } finally {
       setLoading(false);
@@ -97,10 +100,11 @@ export const useExpenses = () => {
     setLoading(true);
     setError(null);
     try {
-      const response = await axios.get<CategorySummary[]>(`${API_BASE_URL}/category-summary`);
-      setCategorySummary(response.data);
+      const summary = await apiService.getCategorySummary();
+      setCategorySummary(summary || []);
     } catch (err) {
       setError('Failed to fetch category summary.');
+      setCategorySummary([]);
       console.error(err);
     } finally {
       setLoading(false);
@@ -109,10 +113,14 @@ export const useExpenses = () => {
 
   useEffect(() => {
     fetchExpenses();
+    
+    // Get data for the last 6 months to show meaningful monthly summary
     const today = new Date();
-    const firstDayOfMonth = new Date(today.getFullYear(), today.getMonth(), 1).toISOString().split('T')[0];
-    const lastDayOfMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0).toISOString().split('T')[0];
-    fetchMonthlySummary(firstDayOfMonth, lastDayOfMonth);
+    const sixMonthsAgo = new Date(today.getFullYear(), today.getMonth() - 6, 1);
+    const startDate = sixMonthsAgo.toISOString().split('T')[0];
+    const endDate = today.toISOString().split('T')[0];
+    
+    fetchMonthlySummary(startDate, endDate);
     fetchCategorySummary();
   }, []);
 

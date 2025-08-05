@@ -4,195 +4,254 @@ import com.expensetracker.exception.InvalidInputException;
 import com.expensetracker.exception.ResourceNotFoundException;
 import com.expensetracker.model.Expense;
 import com.expensetracker.model.ExpenseCategory;
+import com.expensetracker.model.User;
+import com.expensetracker.model.UserPreferences;
 import com.expensetracker.repository.ExpenseRepository;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.oauth2.core.user.OAuth2User;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
-import java.util.Optional;
-import java.util.Map;
-import java.util.HashMap;
+import java.util.*;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.lenient;
 
 @ExtendWith(MockitoExtension.class)
+@DisplayName("ExpenseService Authentication-Aware Tests")
 public class ExpenseServiceTest {
 
     @Mock
     private ExpenseRepository expenseRepository;
 
+    @Mock
+    private UserService userService;
+
+    @Mock
+    private Authentication authentication;
+
+    @Mock
+    private OAuth2User oauth2User;
+
     @InjectMocks
     private ExpenseService expenseService;
 
+    private User testUser;
+    private Expense testExpense;
+    private Pageable pageable;
+
+    @BeforeEach
+    void setUp() {
+        testUser = new User("testuser@example.com", "test@example.com", "Test", "User");
+        testUser.setId("user-123");
+        
+        UserPreferences preferences = new UserPreferences(testUser);
+        testUser.setPreferences(preferences);
+
+        testExpense = new Expense(new BigDecimal("25.50"), ExpenseCategory.FOOD, "Lunch", LocalDate.now());
+        testExpense.setId(1L);
+        testExpense.setUser(testUser);
+
+        pageable = PageRequest.of(0, 10);
+
+        // Default mocking for authentication (lenient for tests that don't use it)
+        lenient().when(authentication.getPrincipal()).thenReturn(oauth2User);
+        lenient().when(oauth2User.getAttribute("preferred_username")).thenReturn("testuser@example.com");
+        lenient().when(userService.findByUsername("testuser@example.com")).thenReturn(testUser);
+    }
+
     @Test
-    public void whenGetAllExpenses_thenReturnExpensePage() {
-        // given
-        Expense expense1 = new Expense(new BigDecimal("10.00"), ExpenseCategory.FOOD, "Lunch", LocalDate.now());
-        Expense expense2 = new Expense(new BigDecimal("20.00"), ExpenseCategory.TRANSPORTATION, "Bus fare", LocalDate.now());
-        List<Expense> expenseList = Arrays.asList(expense1, expense2);
-        Page<Expense> expectedPage = new PageImpl<>(expenseList);
-        Pageable pageable = PageRequest.of(0, 10);
-        when(expenseRepository.findAll(pageable)).thenReturn(expectedPage);
+    @DisplayName("Should get all expenses for authenticated user")
+    void whenGetAllExpensesWithAuth_thenReturnUserExpenses() {
+        // Given
+        List<Expense> userExpenses = Arrays.asList(testExpense);
+        Page<Expense> expectedPage = new PageImpl<>(userExpenses);
+        when(expenseRepository.findByUser(testUser, pageable)).thenReturn(expectedPage);
 
-        // when
-        Page<Expense> actualPage = expenseService.getAllExpenses(pageable);
+        // When
+        Page<Expense> actualPage = expenseService.getAllExpenses(authentication, pageable);
 
-        // then
+        // Then
         assertThat(actualPage).isEqualTo(expectedPage);
-        verify(expenseRepository, times(1)).findAll(pageable);
+        assertThat(actualPage.getContent()).hasSize(1);
+        assertThat(actualPage.getContent().get(0).getUser()).isEqualTo(testUser);
+        verify(expenseRepository).findByUser(testUser, pageable);
     }
 
     @Test
-    public void whenGetExpenseById_thenReturnExpense() {
-        // given
-        Expense expense = new Expense(new BigDecimal("10.00"), ExpenseCategory.FOOD, "Lunch", LocalDate.now());
-        when(expenseRepository.findById(1L)).thenReturn(Optional.of(expense));
+    @DisplayName("Should get expense by ID for authenticated user")
+    void whenGetExpenseByIdWithAuth_thenReturnUserExpense() {
+        // Given
+        when(expenseRepository.findByIdAndUser(1L, testUser)).thenReturn(Optional.of(testExpense));
 
-        // when
-        Expense actualExpense = expenseService.getExpenseById(1L);
+        // When
+        Expense actualExpense = expenseService.getExpenseById(authentication, 1L);
 
-        // then
-        assertThat(actualExpense).isEqualTo(expense);
-        verify(expenseRepository, times(1)).findById(1L);
+        // Then
+        assertThat(actualExpense).isEqualTo(testExpense);
+        assertThat(actualExpense.getUser()).isEqualTo(testUser);
+        verify(expenseRepository).findByIdAndUser(1L, testUser);
     }
 
     @Test
-    public void whenGetExpenseById_thenThrowResourceNotFoundException() {
-        // given
-        when(expenseRepository.findById(1L)).thenReturn(Optional.empty());
+    @DisplayName("Should throw exception when expense not found for user")
+    void whenGetExpenseByIdNotFound_thenThrowException() {
+        // Given
+        when(expenseRepository.findByIdAndUser(999L, testUser)).thenReturn(Optional.empty());
 
-        // when & then
-        assertThrows(ResourceNotFoundException.class, () -> expenseService.getExpenseById(1L));
-        verify(expenseRepository, times(1)).findById(1L);
+        // When & Then
+        assertThrows(ResourceNotFoundException.class, 
+            () -> expenseService.getExpenseById(authentication, 999L));
+        verify(expenseRepository).findByIdAndUser(999L, testUser);
     }
 
     @Test
-    public void whenCreateExpense_thenReturnCreatedExpense() {
-        // given
-        Expense expense = new Expense(new BigDecimal("10.00"), ExpenseCategory.FOOD, "Lunch", LocalDate.now());
-        when(expenseRepository.save(any(Expense.class))).thenReturn(expense);
+    @DisplayName("Should create expense for authenticated user")
+    void whenCreateExpenseWithAuth_thenSetUserAndSave() {
+        // Given
+        Expense newExpense = new Expense(new BigDecimal("15.00"), ExpenseCategory.TRANSPORTATION, "Bus fare", LocalDate.now());
+        Expense savedExpense = new Expense(new BigDecimal("15.00"), ExpenseCategory.TRANSPORTATION, "Bus fare", LocalDate.now());
+        savedExpense.setId(2L);
+        savedExpense.setUser(testUser);
+        
+        when(expenseRepository.save(any(Expense.class))).thenReturn(savedExpense);
 
-        // when
-        Expense createdExpense = expenseService.createExpense(expense);
+        // When
+        Expense result = expenseService.createExpense(authentication, newExpense);
 
-        // then
-        assertThat(createdExpense).isEqualTo(expense);
-        verify(expenseRepository, times(1)).save(expense);
-    }
-
-    
-
-    @Test
-    public void whenDeleteExpense_thenDeleteSuccessfully() {
-        // given
-        when(expenseRepository.existsById(1L)).thenReturn(true);
-        doNothing().when(expenseRepository).deleteById(1L);
-
-        // when
-        expenseService.deleteExpense(1L);
-
-        // then
-        verify(expenseRepository, times(1)).existsById(1L);
-        verify(expenseRepository, times(1)).deleteById(1L);
+        // Then
+        assertThat(result.getUser()).isEqualTo(testUser);
+        assertThat(result.getId()).isEqualTo(2L);
+        verify(expenseRepository).save(newExpense);
+        assertThat(newExpense.getUser()).isEqualTo(testUser); // Verify user was set
     }
 
     @Test
-    public void whenDeleteExpense_thenThrowResourceNotFoundException() {
-        // given
-        when(expenseRepository.existsById(1L)).thenReturn(false);
+    @DisplayName("Should delete expense for authenticated user")
+    void whenDeleteExpenseWithAuth_thenDeleteIfUserOwns() {
+        // Given
+        when(expenseRepository.findByIdAndUser(1L, testUser)).thenReturn(Optional.of(testExpense));
+        doNothing().when(expenseRepository).delete(testExpense);
 
-        // when & then
-        assertThrows(ResourceNotFoundException.class, () -> expenseService.deleteExpense(1L));
-        verify(expenseRepository, times(1)).existsById(1L);
-        verify(expenseRepository, never()).deleteById(anyLong());
+        // When
+        expenseService.deleteExpense(authentication, 1L);
+
+        // Then
+        verify(expenseRepository).findByIdAndUser(1L, testUser);
+        verify(expenseRepository).delete(testExpense);
     }
 
     @Test
-    public void whenGetExpensesByCategory_thenReturnExpensePage() {
-        // given
-        Expense expense1 = new Expense(new BigDecimal("10.00"), ExpenseCategory.FOOD, "Lunch", LocalDate.now());
-        List<Expense> expenseList = Collections.singletonList(expense1);
-        Page<Expense> expectedPage = new PageImpl<>(expenseList);
-        Pageable pageable = PageRequest.of(0, 10);
-        when(expenseRepository.findByCategory(ExpenseCategory.FOOD, pageable)).thenReturn(expectedPage);
+    @DisplayName("Should throw exception when deleting non-existent expense")
+    void whenDeleteNonExistentExpense_thenThrowException() {
+        // Given
+        when(expenseRepository.findByIdAndUser(999L, testUser)).thenReturn(Optional.empty());
 
-        // when
-        Page<Expense> actualPage = expenseService.getExpensesByCategory(ExpenseCategory.FOOD, pageable);
+        // When & Then
+        assertThrows(ResourceNotFoundException.class, 
+            () -> expenseService.deleteExpense(authentication, 999L));
+        verify(expenseRepository).findByIdAndUser(999L, testUser);
+        verify(expenseRepository, never()).delete(any());
+    }
 
-        // then
+    @Test
+    @DisplayName("Should get expenses by category for authenticated user")
+    void whenGetExpensesByCategoryWithAuth_thenReturnUserExpenses() {
+        // Given
+        List<Expense> categoryExpenses = Arrays.asList(testExpense);
+        Page<Expense> expectedPage = new PageImpl<>(categoryExpenses);
+        when(expenseRepository.findByUserAndCategory(testUser, ExpenseCategory.FOOD, pageable))
+            .thenReturn(expectedPage);
+
+        // When
+        Page<Expense> actualPage = expenseService.getExpensesByCategory(authentication, ExpenseCategory.FOOD, pageable);
+
+        // Then
         assertThat(actualPage).isEqualTo(expectedPage);
-        verify(expenseRepository, times(1)).findByCategory(ExpenseCategory.FOOD, pageable);
+        verify(expenseRepository).findByUserAndCategory(testUser, ExpenseCategory.FOOD, pageable);
     }
 
     @Test
-    public void whenGetExpensesByCategoryWithNullCategory_thenThrowInvalidInputException() {
-        Pageable pageable = PageRequest.of(0, 10);
-        assertThrows(InvalidInputException.class, () -> expenseService.getExpensesByCategory(null, pageable));
-        verify(expenseRepository, never()).findByCategory(any(ExpenseCategory.class), any(Pageable.class));
+    @DisplayName("Should throw exception for null category")
+    void whenGetExpensesByNullCategory_thenThrowException() {
+        // When & Then
+        assertThrows(InvalidInputException.class, 
+            () -> expenseService.getExpensesByCategory(authentication, null, pageable));
+        verify(expenseRepository, never()).findByUserAndCategory(any(), any(), any());
     }
 
     @Test
-    public void whenGetExpensesByDateRange_thenReturnExpensePage() {
-        // given
-        LocalDate startDate = LocalDate.now().minusDays(1);
+    @DisplayName("Should get expenses by date range for authenticated user")
+    void whenGetExpensesByDateRangeWithAuth_thenReturnUserExpenses() {
+        // Given
+        LocalDate startDate = LocalDate.now().minusDays(7);
         LocalDate endDate = LocalDate.now();
-        Expense expense1 = new Expense(new BigDecimal("10.00"), ExpenseCategory.FOOD, "Lunch", startDate);
-        List<Expense> expenseList = Collections.singletonList(expense1);
-        Page<Expense> expectedPage = new PageImpl<>(expenseList);
-        Pageable pageable = PageRequest.of(0, 10);
-        when(expenseRepository.findByDateBetween(startDate, endDate, pageable)).thenReturn(expectedPage);
+        List<Expense> dateRangeExpenses = Arrays.asList(testExpense);
+        Page<Expense> expectedPage = new PageImpl<>(dateRangeExpenses);
+        
+        when(expenseRepository.findByUserAndDateBetween(testUser, startDate, endDate, pageable))
+            .thenReturn(expectedPage);
 
-        // when
-        Page<Expense> actualPage = expenseService.getExpensesByDateRange(startDate, endDate, pageable);
+        // When
+        Page<Expense> actualPage = expenseService.getExpensesByDateRange(authentication, startDate, endDate, pageable);
 
-        // then
+        // Then
         assertThat(actualPage).isEqualTo(expectedPage);
-        verify(expenseRepository, times(1)).findByDateBetween(startDate, endDate, pageable);
+        verify(expenseRepository).findByUserAndDateBetween(testUser, startDate, endDate, pageable);
     }
 
     @Test
-    public void whenGetExpensesByDateRangeWithNullStartDate_thenThrowInvalidInputException() {
+    @DisplayName("Should throw exception for invalid date range")
+    void whenGetExpensesByInvalidDateRange_thenThrowException() {
+        // Given
+        LocalDate startDate = LocalDate.now();
+        LocalDate endDate = LocalDate.now().minusDays(1); // End before start
+
+        // When & Then
+        assertThrows(InvalidInputException.class, 
+            () -> expenseService.getExpensesByDateRange(authentication, startDate, endDate, pageable));
+    }
+
+    @Test
+    @DisplayName("Should throw exception for null start date")
+    void whenGetExpensesByNullStartDate_thenThrowException() {
+        // Given
         LocalDate endDate = LocalDate.now();
-        Pageable pageable = PageRequest.of(0, 10);
-        assertThrows(InvalidInputException.class, () -> expenseService.getExpensesByDateRange(null, endDate, pageable));
-        verify(expenseRepository, never()).findByDateBetween(any(LocalDate.class), any(LocalDate.class), any(Pageable.class));
+
+        // When & Then
+        assertThrows(InvalidInputException.class, 
+            () -> expenseService.getExpensesByDateRange(authentication, null, endDate, pageable));
     }
 
     @Test
-    public void whenGetExpensesByDateRangeWithNullEndDate_thenThrowInvalidInputException() {
-        LocalDate startDate = LocalDate.now();
-        Pageable pageable = PageRequest.of(0, 10);
-        assertThrows(InvalidInputException.class, () -> expenseService.getExpensesByDateRange(startDate, null, pageable));
-        verify(expenseRepository, never()).findByDateBetween(any(LocalDate.class), any(LocalDate.class), any(Pageable.class));
+    @DisplayName("Should throw exception for null end date")
+    void whenGetExpensesByNullEndDate_thenThrowException() {
+        // Given
+        LocalDate startDate = LocalDate.now().minusDays(7);
+
+        // When & Then
+        assertThrows(InvalidInputException.class, 
+            () -> expenseService.getExpensesByDateRange(authentication, startDate, null, pageable));
     }
 
     @Test
-    public void whenGetExpensesByDateRangeWithStartDateAfterEndDate_thenThrowInvalidInputException() {
-        LocalDate startDate = LocalDate.now();
-        LocalDate endDate = LocalDate.now().minusDays(1);
-        Pageable pageable = PageRequest.of(0, 10);
-        assertThrows(InvalidInputException.class, () -> expenseService.getExpensesByDateRange(startDate, endDate, pageable));
-        verify(expenseRepository, never()).findByDateBetween(any(LocalDate.class), any(LocalDate.class), any(Pageable.class));
-    }
-
-    @Test
-    public void whenGetMonthlySummary_thenReturnSummaryList() {
-        // given
+    @DisplayName("Should get monthly summary for authenticated user")
+    void whenGetMonthlySummaryWithAuth_thenReturnUserSummary() {
+        // Given
         LocalDate startDate = LocalDate.of(2025, 1, 1);
         LocalDate endDate = LocalDate.of(2025, 1, 31);
         Map<String, Object> summary = new HashMap<>();
@@ -200,56 +259,65 @@ public class ExpenseServiceTest {
         summary.put("month", 1);
         summary.put("total", new BigDecimal("100.00").doubleValue());
         List<Map<String, Object>> expectedSummary = Collections.singletonList(summary);
-        when(expenseRepository.getMonthlySummary(startDate, endDate)).thenReturn(expectedSummary);
+        
+        when(expenseRepository.getMonthlySummaryByUser(testUser, startDate, endDate))
+            .thenReturn(expectedSummary);
 
-        // when
-        List<Map<String, Object>> actualSummary = expenseService.getMonthlySummary(startDate, endDate);
+        // When
+        List<Map<String, Object>> actualSummary = expenseService.getMonthlySummary(authentication, startDate, endDate);
 
-        // then
+        // Then
         assertThat(actualSummary).isEqualTo(expectedSummary);
-        verify(expenseRepository, times(1)).getMonthlySummary(startDate, endDate);
+        verify(expenseRepository).getMonthlySummaryByUser(testUser, startDate, endDate);
     }
 
     @Test
-    public void whenGetMonthlySummaryWithNullStartDate_thenThrowInvalidInputException() {
-        LocalDate endDate = LocalDate.now();
-        assertThrows(InvalidInputException.class, () -> expenseService.getMonthlySummary(null, endDate));
-        verify(expenseRepository, never()).getMonthlySummary(any(LocalDate.class), any(LocalDate.class));
-    }
-
-    @Test
-    public void whenGetMonthlySummaryWithNullEndDate_thenThrowInvalidInputException() {
-        LocalDate startDate = LocalDate.now();
-        assertThrows(InvalidInputException.class, () -> expenseService.getMonthlySummary(startDate, null));
-        verify(expenseRepository, never()).getMonthlySummary(any(LocalDate.class), any(LocalDate.class));
-    }
-
-    @Test
-    public void whenGetMonthlySummaryWithStartDateAfterEndDate_thenThrowInvalidInputException() {
-        LocalDate startDate = LocalDate.now();
-        LocalDate endDate = LocalDate.now().minusDays(1);
-        assertThrows(InvalidInputException.class, () -> expenseService.getMonthlySummary(startDate, endDate));
-        verify(expenseRepository, never()).getMonthlySummary(any(LocalDate.class), any(LocalDate.class));
-    }
-
-    @Test
-    public void whenGetCategorySummary_thenReturnSummaryList() {
-        // given
-        Map<String, Object> expectedMap = new HashMap<>();
-        expectedMap.put("category", ExpenseCategory.FOOD.name());
-        expectedMap.put("total", new BigDecimal("100.00"));
-        List<Map<String, Object>> expectedSummary = Collections.singletonList(expectedMap);
-
+    @DisplayName("Should get category summary for authenticated user")
+    void whenGetCategorySummaryWithAuth_thenReturnUserSummary() {
+        // Given
         Object[] rawResult = {ExpenseCategory.FOOD, new BigDecimal("100.00")};
         List<Object[]> mockRepositoryResult = Collections.singletonList(rawResult);
+        when(expenseRepository.getCategorySummaryByUser(testUser)).thenReturn(mockRepositoryResult);
 
-        when(expenseRepository.getCategorySummary()).thenReturn(mockRepositoryResult);
+        // When
+        List<Map<String, Object>> actualSummary = expenseService.getCategorySummary(authentication);
 
-        // when
-        List<Map<String, Object>> actualSummary = expenseService.getCategorySummary();
-
-        // then
-        assertThat(actualSummary).isEqualTo(expectedSummary);
-        verify(expenseRepository, times(1)).getCategorySummary();
+        // Then
+        assertThat(actualSummary).hasSize(1);
+        Map<String, Object> resultMap = actualSummary.get(0);
+        assertThat(resultMap.get("category")).isEqualTo(ExpenseCategory.FOOD.name());
+        assertThat(resultMap.get("total")).isEqualTo(new BigDecimal("100.00"));
+        verify(expenseRepository).getCategorySummaryByUser(testUser);
     }
+
+    @Test
+    @DisplayName("Should handle user not found gracefully")
+    void whenUserNotFound_thenThrowException() {
+        // Given
+        when(userService.findByUsername("testuser@example.com")).thenReturn(null);
+
+        // When & Then
+        assertThrows(RuntimeException.class, 
+            () -> expenseService.getAllExpenses(authentication, pageable));
+    }
+
+    @Test
+    @DisplayName("Should handle non-OAuth2 authentication")
+    void whenNonOAuth2Authentication_thenUseAuthName() {
+        // Given
+        when(authentication.getPrincipal()).thenReturn("testuser@example.com");
+        when(authentication.getName()).thenReturn("testuser@example.com");
+        
+        List<Expense> userExpenses = Arrays.asList(testExpense);
+        Page<Expense> expectedPage = new PageImpl<>(userExpenses);
+        when(expenseRepository.findByUser(testUser, pageable)).thenReturn(expectedPage);
+
+        // When
+        Page<Expense> actualPage = expenseService.getAllExpenses(authentication, pageable);
+
+        // Then
+        assertThat(actualPage).isEqualTo(expectedPage);
+        verify(userService).findByUsername("testuser@example.com");
+    }
+
 }

@@ -13,8 +13,10 @@ interface MonthlySplineChartProps {
 }
 
 const MonthlySplineChart: React.FC<MonthlySplineChartProps> = ({ monthlySummary }) => {
-  const categories = monthlySummary.map(item => `${item.year}-${String(item.month).padStart(2, '0')}`);
-  const data = monthlySummary.map(item => item.total);
+  // Defensive check for undefined/null monthlySummary
+  const safeMonthlySummary = monthlySummary || [];
+  const categories = safeMonthlySummary.map(item => `${item.year}-${String(item.month).padStart(2, '0')}`);
+  const data = safeMonthlySummary.map(item => item.total);
 
   const options = {
     chart: {
@@ -48,7 +50,7 @@ const MonthlySplineChart: React.FC<MonthlySplineChartProps> = ({ monthlySummary 
 
   return (
     <div className="bg-white p-6 rounded-lg shadow-md mb-6">
-      {monthlySummary.length === 0 ? (
+      {safeMonthlySummary.length === 0 ? (
         <p>No monthly spending data available for the selected period.</p>
       ) : (
         <HighchartsReact highcharts={Highcharts} options={options} />

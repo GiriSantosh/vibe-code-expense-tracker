@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Personal Expense Tracker - Local</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100">
+    <div class="container mx-auto p-8">
+        <h1 class="text-4xl font-bold text-center mb-8 text-gray-800">
+            Personal Expense Tracker - Local Mode
+        </h1>
+        
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+            <div class="bg-white p-6 rounded-lg shadow-md">
+                <h3 class="text-lg font-semibold mb-4">Backend Status</h3>
+                <div id="backend-status">Checking...</div>
+                <button onclick="checkHealth()" class="mt-2 bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">
+                    Check Health
+                </button>
+            </div>
+            
+            <div class="bg-white p-6 rounded-lg shadow-md">
+                <h3 class="text-lg font-semibold mb-4">Quick Actions</h3>
+                <button onclick="addSampleExpense()" class="block w-full mb-2 bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600">
+                    Add Sample Expense
+                </button>
+                <button onclick="loadExpenses()" class="block w-full mb-2 bg-purple-500 text-white px-4 py-2 rounded hover:bg-purple-600">
+                    Load Expenses
+                </button>
+                <a href="http://localhost:8080/h2-console" target="_blank" class="block w-full bg-orange-500 text-white px-4 py-2 rounded hover:bg-orange-600 text-center">
+                    Open Database Console
+                </a>
+            </div>
+        </div>
+        
+        <div class="bg-white rounded-lg shadow-md p-6">
+            <h3 class="text-lg font-semibold mb-4">Expenses</h3>
+            <div id="expenses-list">Click "Load Expenses" to see data</div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:8080/api/local';
+        
+        async function checkHealth() {
+            try {
+                const response = await fetch(`${API_BASE}/health`);
+                const data = await response.json();
+                document.getElementById('backend-status').innerHTML = 
+                    `<div class="text-green-600">✅ Backend Online</div>
+                     <pre class="text-xs mt-2">${JSON.stringify(data, null, 2)}</pre>`;
+            } catch (error) {
+                document.getElementById('backend-status').innerHTML = 
+                    `<div class="text-red-600">❌ Backend Offline: ${error.message}</div>`;
+            }
+        }
+        
+        async function addSampleExpense() {
+            try {
+                const expense = {
+                    amount: Math.floor(Math.random() * 100) + 10,
+                    category: ['FOOD', 'TRANSPORTATION', 'ENTERTAINMENT'][Math.floor(Math.random() * 3)],
+                    description: 'Sample expense from web UI',
+                    date: new Date().toISOString().split('T')[0]
+                };
+                
+                const response = await fetch(`${API_BASE}/expenses`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(expense)
+                });
+                
+                if (response.ok) {
+                    alert('Expense added successfully!');
+                    loadExpenses();
+                } else {
+                    alert('Failed to add expense');
+                }
+            } catch (error) {
+                alert(`Error: ${error.message}`);
+            }
+        }
+        
+        async function loadExpenses() {
+            try {
+                const response = await fetch(`${API_BASE}/expenses`);
+                const data = await response.json();
+                const expenses = data.content || [];
+                
+                if (expenses.length === 0) {
+                    document.getElementById('expenses-list').innerHTML = 
+                        '<p class="text-gray-500">No expenses found. Add some sample expenses first.</p>';
+                    return;
+                }
+                
+                const table = `
+                    <table class="w-full table-auto">
+                        <thead>
+                            <tr class="bg-gray-50">
+                                <th class="px-4 py-2 text-left">Date</th>
+                                <th class="px-4 py-2 text-left">Category</th>
+                                <th class="px-4 py-2 text-left">Description</th>
+                                <th class="px-4 py-2 text-left">Amount</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${expenses.map(expense => `
+                                <tr class="border-t">
+                                    <td class="px-4 py-2">${expense.date}</td>
+                                    <td class="px-4 py-2">${expense.category}</td>
+                                    <td class="px-4 py-2">${expense.description}</td>
+                                    <td class="px-4 py-2">$${expense.amount}</td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                `;
+                
+                document.getElementById('expenses-list').innerHTML = table;
+            } catch (error) {
+                document.getElementById('expenses-list').innerHTML = 
+                    `<div class="text-red-600">Error loading expenses: ${error.message}</div>`;
+            }
+        }
+        
+        // Check health on page load
+        checkHealth();
+    </script>
+</body>
+</html>

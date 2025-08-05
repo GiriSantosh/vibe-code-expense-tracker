@@ -1,17 +1,21 @@
 import React from 'react';
 import { render, screen } from '@testing-library/react';
 import CategoryChart from '../components/CategoryChart';
-import { ExpenseCategory } from '@/types/ExpenseCategory';
+import { ExpenseCategory } from '../types/ExpenseCategory';
 
-// Mock Recharts components to avoid actual chart rendering issues in tests
-jest.mock('recharts', () => ({
-  PieChart: ({ children }: { children: React.ReactNode }) => <div data-testid="pie-chart">{children}</div>,
-  Pie: ({ children }: { children: React.ReactNode }) => <div data-testid="pie">{children}</div>,
-  Cell: () => <div data-testid="cell" />,
-  Tooltip: () => <div data-testid="tooltip" />,
-  ResponsiveContainer: ({ children }: { children: React.ReactNode }) => <div data-testid="responsive-container">{children}</div>,
-  Legend: () => <div data-testid="legend" />,
+// Mock Highcharts components to avoid actual chart rendering issues in tests
+jest.mock('highcharts-react-official', () => {
+  return function MockHighchartsReact() {
+    return <div data-testid="highcharts-chart">Mock Highcharts Chart</div>;
+  };
+});
+
+jest.mock('highcharts', () => ({
+  chart: jest.fn(),
 }));
+
+jest.mock('highcharts/highcharts-more', () => ({}));
+jest.mock('highcharts/modules/solid-gauge', () => ({}));
 
 describe('CategoryChart', () => {
   it('renders category chart with data', () => {
@@ -22,18 +26,14 @@ describe('CategoryChart', () => {
 
     render(<CategoryChart categorySummary={mockCategorySummary} />);
 
-    expect(screen.getByText(/Category Breakdown/i)).toBeInTheDocument();
-    expect(screen.getByTestId('pie-chart')).toBeInTheDocument();
-    expect(screen.getByTestId('pie')).toBeInTheDocument();
-    expect(screen.getAllByTestId('cell')).toHaveLength(2);
-    expect(screen.getByTestId('tooltip')).toBeInTheDocument();
-    expect(screen.getByTestId('legend')).toBeInTheDocument();
+    expect(screen.getByTestId('highcharts-chart')).toBeInTheDocument();
+    expect(screen.getByText('Mock Highcharts Chart')).toBeInTheDocument();
   });
 
   it('displays a message when no category data is available', () => {
     render(<CategoryChart categorySummary={[]} />);
 
     expect(screen.getByText(/No category data available./i)).toBeInTheDocument();
-    expect(screen.queryByTestId('pie-chart')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('highcharts-chart')).not.toBeInTheDocument();
   });
 });

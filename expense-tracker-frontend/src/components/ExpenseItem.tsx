@@ -25,7 +25,7 @@ const ExpenseItem: React.FC<ExpenseItemProps> = ({ expense, onDelete }) => {
         {expense.category}
       </td>
       <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold text-gray-800">
-        ${expense.amount.toFixed(2)}
+        ${expense.amount ? expense.amount.toFixed(2) : '0.00'}
       </td>
       <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
         <button

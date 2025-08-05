@@ -2,6 +2,9 @@ package com.expensetracker.repository;
 
 import com.expensetracker.model.Expense;
 import com.expensetracker.model.ExpenseCategory;
+import com.expensetracker.model.User;
+import com.expensetracker.model.UserPreferences;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
@@ -17,8 +20,10 @@ import java.util.List;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import org.springframework.test.context.ActiveProfiles;
 
 @DataJpaTest
+@ActiveProfiles("test")
 public class ExpenseRepositoryTest {
 
     @Autowired
@@ -27,53 +32,77 @@ public class ExpenseRepositoryTest {
     @Autowired
     private ExpenseRepository expenseRepository;
 
+    private User testUser;
+
+    @BeforeEach
+    void setUp() {
+        // Create and persist a test user
+        testUser = new User("testuser@example.com", "test@example.com", "Test", "User");
+        UserPreferences preferences = new UserPreferences(testUser);
+        testUser.setPreferences(preferences);
+        testUser = entityManager.persist(testUser);
+        entityManager.flush();
+    }
+
     @Test
-    public void whenFindByCategory_thenReturnExpenses() {
+    public void whenFindByUserAndCategory_thenReturnExpenses() {
         // given
         Expense expense = new Expense(new BigDecimal("10.00"), ExpenseCategory.FOOD, "Lunch", LocalDate.now());
+        expense.setUser(testUser);
         entityManager.persist(expense);
         entityManager.flush();
         Pageable pageable = PageRequest.of(0, 10);
 
         // when
-        Page<Expense> found = expenseRepository.findByCategory(ExpenseCategory.FOOD, pageable);
+        Page<Expense> found = expenseRepository.findByUserAndCategory(testUser, ExpenseCategory.FOOD, pageable);
 
         // then
         assertThat(found.getContent()).hasSize(1);
         assertThat(found.getContent().get(0).getCategory()).isEqualTo(ExpenseCategory.FOOD);
+        assertThat(found.getContent().get(0).getUser()).isEqualTo(testUser);
     }
 
     @Test
-    public void whenFindByDateBetween_thenReturnExpenses() {
+    public void whenFindByUserAndDateBetween_thenReturnExpenses() {
         // given
         Expense expense1 = new Expense(new BigDecimal("10.00"), ExpenseCategory.FOOD, "Lunch", LocalDate.now().minusDays(1));
+        expense1.setUser(testUser);
         Expense expense2 = new Expense(new BigDecimal("20.00"), ExpenseCategory.TRANSPORTATION, "Bus fare", LocalDate.now());
+        expense2.setUser(testUser);
         entityManager.persist(expense1);
         entityManager.persist(expense2);
         entityManager.flush();
         Pageable pageable = PageRequest.of(0, 10);
 
         // when
-        Page<Expense> found = expenseRepository.findByDateBetween(LocalDate.now().minusDays(2), LocalDate.now(), pageable);
+        Page<Expense> found = expenseRepository.findByUserAndDateBetween(testUser, LocalDate.now().minusDays(2), LocalDate.now(), pageable);
 
         // then
         assertThat(found.getContent()).hasSize(2);
+        assertThat(found.getContent()).allMatch(expense -> expense.getUser().equals(testUser));
     }
 
     @Test
-    public void whenGetMonthlySummary_thenReturnCorrectSummary() {
+    public void whenGetMonthlySummaryByUser_thenReturnCorrectSummary() {
         // given
         LocalDate date1 = LocalDate.of(2025, 1, 15);
         LocalDate date2 = LocalDate.of(2025, 1, 20);
         LocalDate date3 = LocalDate.of(2025, 2, 10);
 
-        entityManager.persist(new Expense(new BigDecimal("100.00"), ExpenseCategory.FOOD, "Jan Expense 1", date1));
-        entityManager.persist(new Expense(new BigDecimal("50.00"), ExpenseCategory.FOOD, "Jan Expense 2", date2));
-        entityManager.persist(new Expense(new BigDecimal("200.00"), ExpenseCategory.BILLS, "Feb Expense 1", date3));
+        Expense expense1 = new Expense(new BigDecimal("100.00"), ExpenseCategory.FOOD, "Jan Expense 1", date1);
+        expense1.setUser(testUser);
+        Expense expense2 = new Expense(new BigDecimal("50.00"), ExpenseCategory.FOOD, "Jan Expense 2", date2);
+        expense2.setUser(testUser);
+        Expense expense3 = new Expense(new BigDecimal("200.00"), ExpenseCategory.BILLS, "Feb Expense 1", date3);
+        expense3.setUser(testUser);
+
+        entityManager.persist(expense1);
+        entityManager.persist(expense2);
+        entityManager.persist(expense3);
         entityManager.flush();
 
         // when
-        List<Map<String, Object>> summary = expenseRepository.getMonthlySummary(LocalDate.of(2025, 1, 1), LocalDate.of(2025, 2, 28));
+        List<Map<String, Object>> summary = expenseRepository.getMonthlySummaryByUser(testUser, LocalDate.of(2025, 1, 1), LocalDate.of(2025, 2, 28));
 
         // then
         assertThat(summary).hasSize(2);
@@ -94,15 +123,22 @@ public class ExpenseRepositoryTest {
     }
 
     @Test
-    public void whenGetCategorySummary_thenReturnCorrectSummary() {
+    public void whenGetCategorySummaryByUser_thenReturnCorrectSummary() {
         // given
-        entityManager.persist(new Expense(new BigDecimal("100.00"), ExpenseCategory.FOOD, "Food 1", LocalDate.now()));
-        entityManager.persist(new Expense(new BigDecimal("50.00"), ExpenseCategory.FOOD, "Food 2", LocalDate.now()));
-        entityManager.persist(new Expense(new BigDecimal("200.00"), ExpenseCategory.TRANSPORTATION, "Transport 1", LocalDate.now()));
+        Expense expense1 = new Expense(new BigDecimal("100.00"), ExpenseCategory.FOOD, "Food 1", LocalDate.now());
+        expense1.setUser(testUser);
+        Expense expense2 = new Expense(new BigDecimal("50.00"), ExpenseCategory.FOOD, "Food 2", LocalDate.now());
+        expense2.setUser(testUser);
+        Expense expense3 = new Expense(new BigDecimal("200.00"), ExpenseCategory.TRANSPORTATION, "Transport 1", LocalDate.now());
+        expense3.setUser(testUser);
+
+        entityManager.persist(expense1);
+        entityManager.persist(expense2);
+        entityManager.persist(expense3);
         entityManager.flush();
 
         // when
-        List<Object[]> summary = expenseRepository.getCategorySummary();
+        List<Object[]> summary = expenseRepository.getCategorySummaryByUser(testUser);
 
         // then
         assertThat(summary).hasSize(2);
@@ -118,5 +154,43 @@ public class ExpenseRepositoryTest {
                 .findFirst().orElse(null);
         assertThat(transportationSummary).isNotNull();
         assertThat(transportationSummary[1]).isEqualTo(new BigDecimal("200.00"));
+    }
+
+    @Test
+    public void whenFindByUser_thenReturnUserExpenses() {
+        // given
+        Expense expense1 = new Expense(new BigDecimal("25.00"), ExpenseCategory.FOOD, "Lunch", LocalDate.now());
+        expense1.setUser(testUser);
+        Expense expense2 = new Expense(new BigDecimal("15.00"), ExpenseCategory.TRANSPORTATION, "Bus", LocalDate.now());
+        expense2.setUser(testUser);
+
+        entityManager.persist(expense1);
+        entityManager.persist(expense2);
+        entityManager.flush();
+        Pageable pageable = PageRequest.of(0, 10);
+
+        // when
+        Page<Expense> found = expenseRepository.findByUser(testUser, pageable);
+
+        // then
+        assertThat(found.getContent()).hasSize(2);
+        assertThat(found.getContent()).allMatch(expense -> expense.getUser().equals(testUser));
+    }
+
+    @Test
+    public void whenFindByIdAndUser_thenReturnExpense() {
+        // given
+        Expense expense = new Expense(new BigDecimal("25.00"), ExpenseCategory.FOOD, "Lunch", LocalDate.now());
+        expense.setUser(testUser);
+        Expense savedExpense = entityManager.persist(expense);
+        entityManager.flush();
+
+        // when
+        var found = expenseRepository.findByIdAndUser(savedExpense.getId(), testUser);
+
+        // then
+        assertThat(found).isPresent();
+        assertThat(found.get().getUser()).isEqualTo(testUser);
+        assertThat(found.get().getDescription()).isEqualTo("Lunch");
     }
 }
