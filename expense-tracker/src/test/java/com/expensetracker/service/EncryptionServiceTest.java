@@ -1,89 +1,49 @@
 package com.expensetracker.service;
 
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.ValueSource;
+import org.junit.jupiter.api.DisplayName;
+import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.util.ReflectionTestUtils;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.*;
 
-@DisplayName("EncryptionService Tests")
-public class EncryptionServiceTest {
+@ActiveProfiles("test")
+class EncryptionServiceTest {
 
     private EncryptionService encryptionService;
-    private final String testMasterKey = "testKey123456789012345678901234"; // 32 characters
 
     @BeforeEach
     void setUp() {
         encryptionService = new EncryptionService();
-        ReflectionTestUtils.setField(encryptionService, "masterKeyString", testMasterKey);
+        // Set a test master key
+        ReflectionTestUtils.setField(encryptionService, "masterKeyString", "testMasterKey123456789012345678901234");
     }
 
     @Test
     @DisplayName("Should encrypt and decrypt text successfully")
-    void whenEncryptAndDecrypt_thenReturnOriginalText() {
+    void shouldEncryptAndDecryptTextSuccessfully() {
         // Given
-        String originalText = "sensitive@email.com";
+        String plaintext = "sensitive@email.com";
 
         // When
-        String encrypted = encryptionService.encrypt(originalText);
+        String encrypted = encryptionService.encrypt(plaintext);
         String decrypted = encryptionService.decrypt(encrypted);
 
         // Then
-        assertThat(decrypted).isEqualTo(originalText);
-        assertThat(encrypted).isNotEqualTo(originalText);
-        assertThat(encrypted).contains(":"); // Should contain IV separator
+        assertNotNull(encrypted);
+        assertNotEquals(plaintext, encrypted);
+        assertEquals(plaintext, decrypted);
+        
+        // Verify encrypted format (IV:ciphertext)
+        assertTrue(encrypted.contains(":"));
+        String[] parts = encrypted.split(":");
+        assertEquals(2, parts.length);
     }
 
     @Test
-    @DisplayName("Should handle null input gracefully")
-    void whenEncryptNull_thenReturnNull() {
-        // When
-        String encrypted = encryptionService.encrypt(null);
-        String decrypted = encryptionService.decrypt(null);
-
-        // Then
-        assertThat(encrypted).isNull();
-        assertThat(decrypted).isNull();
-    }
-
-    @Test
-    @DisplayName("Should handle empty string gracefully")
-    void whenEncryptEmptyString_thenReturnEmptyString() {
-        // When
-        String encrypted = encryptionService.encrypt("");
-        String decrypted = encryptionService.decrypt("");
-
-        // Then
-        assertThat(encrypted).isEmpty();
-        assertThat(decrypted).isEmpty();
-    }
-
-    @ParameterizedTest
-    @ValueSource(strings = {
-        "test@example.com",
-        "user@domain.org",
-        "very.long.email.address@subdomain.example.com",
-        "special+chars@test-domain.co.uk",
-        "unicode.测试@example.com"
-    })
-    @DisplayName("Should encrypt and decrypt various email formats")
-    void whenEncryptVariousEmails_thenDecryptCorrectly(String email) {
-        // When
-        String encrypted = encryptionService.encrypt(email);
-        String decrypted = encryptionService.decrypt(encrypted);
-
-        // Then
-        assertThat(decrypted).isEqualTo(email);
-        assertThat(encrypted).isNotEqualTo(email);
-    }
-
-    @Test
-    @DisplayName("Should generate different ciphertext for same plaintext")
-    void whenEncryptSameTextTwice_thenGenerateDifferentCiphertext() {
+    @DisplayName("Should produce different encrypted values for same plaintext")
+    void shouldProduceDifferentEncryptedValuesForSamePlaintext() {
         // Given
         String plaintext = "test@example.com";
 
@@ -92,140 +52,174 @@ public class EncryptionServiceTest {
         String encrypted2 = encryptionService.encrypt(plaintext);
 
         // Then
-        assertThat(encrypted1).isNotEqualTo(encrypted2); // Different IV should result in different ciphertext
-        assertThat(encryptionService.decrypt(encrypted1)).isEqualTo(plaintext);
-        assertThat(encryptionService.decrypt(encrypted2)).isEqualTo(plaintext);
+        assertNotEquals(encrypted1, encrypted2);
+        
+        // But both should decrypt to the same plaintext
+        assertEquals(plaintext, encryptionService.decrypt(encrypted1));
+        assertEquals(plaintext, encryptionService.decrypt(encrypted2));
     }
 
     @Test
-    @DisplayName("Should handle long text encryption")
-    void whenEncryptLongText_thenDecryptCorrectly() {
+    @DisplayName("Should handle null input gracefully")
+    void shouldHandleNullInputGracefully() {
+        // When & Then
+        assertNull(encryptionService.encrypt(null));
+        assertNull(encryptionService.decrypt(null));
+    }
+
+    @Test
+    @DisplayName("Should handle empty string input gracefully")
+    void shouldHandleEmptyStringInputGracefully() {
         // Given
-        String longText = "This is a very long email address that exceeds normal lengths: " +
-                         "very.very.very.long.email.address.with.multiple.subdomains@" +
-                         "subdomain1.subdomain2.subdomain3.example.domain.com";
+        String empty = "";
 
-        // When
-        String encrypted = encryptionService.encrypt(longText);
-        String decrypted = encryptionService.decrypt(encrypted);
-
-        // Then
-        assertThat(decrypted).isEqualTo(longText);
+        // When & Then
+        assertEquals(empty, encryptionService.encrypt(empty));
+        assertEquals(empty, encryptionService.decrypt(empty));
     }
 
     @Test
     @DisplayName("Should throw exception for invalid encrypted data format")
-    void whenDecryptInvalidFormat_thenThrowException() {
+    void shouldThrowExceptionForInvalidEncryptedDataFormat() {
         // Given
-        String invalidEncryptedData = "invalid-format-without-separator";
+        String invalidFormat = "invalidencrypteddata";
 
         // When & Then
-        assertThrows(RuntimeException.class, () -> encryptionService.decrypt(invalidEncryptedData));
+        RuntimeException exception = assertThrows(RuntimeException.class, 
+            () -> encryptionService.decrypt(invalidFormat));
+        
+        assertTrue(exception.getMessage().contains("Error decrypting data"));
+        assertTrue(exception.getCause() instanceof IllegalArgumentException);
     }
 
     @Test
     @DisplayName("Should throw exception for corrupted encrypted data")
-    void whenDecryptCorruptedData_thenThrowException() {
+    void shouldThrowExceptionForCorruptedEncryptedData() {
         // Given
-        String corruptedData = "invalidIV:invalidCiphertext";
+        String plaintext = "test@example.com";
+        String encrypted = encryptionService.encrypt(plaintext);
+        
+        // Corrupt the encrypted data
+        String corrupted = encrypted.replace("A", "B");
 
         // When & Then
-        assertThrows(RuntimeException.class, () -> encryptionService.decrypt(corruptedData));
+        RuntimeException exception = assertThrows(RuntimeException.class, 
+            () -> encryptionService.decrypt(corrupted));
+        
+        assertTrue(exception.getMessage().contains("Error decrypting data"));
     }
 
     @Test
-    @DisplayName("Should handle special characters in encryption")
-    void whenEncryptSpecialCharacters_thenDecryptCorrectly() {
+    @DisplayName("Should handle special characters in plaintext")
+    void shouldHandleSpecialCharactersInPlaintext() {
         // Given
-        String specialChars = "email+tag@domain.com!@#$%^&*()";
+        String specialChars = "user@domain.com!@#$%^&*(){}[]|\\:;\"'<>,.?/~`";
 
         // When
         String encrypted = encryptionService.encrypt(specialChars);
         String decrypted = encryptionService.decrypt(encrypted);
 
         // Then
-        assertThat(decrypted).isEqualTo(specialChars);
+        assertEquals(specialChars, decrypted);
     }
 
     @Test
-    @DisplayName("Should encrypt consistently with same master key")
-    void whenUsingSameMasterKey_thenDecryptionWorks() {
+    @DisplayName("Should handle Unicode characters in plaintext")
+    void shouldHandleUnicodeCharactersInPlaintext() {
         // Given
-        String plaintext = "test@example.com";
-        String encrypted = encryptionService.encrypt(plaintext);
-
-        // Create new service instance with same key
-        EncryptionService newService = new EncryptionService();
-        ReflectionTestUtils.setField(newService, "masterKeyString", testMasterKey);
+        String unicode = "test@domain.com 测试 🔐 ñáéíóú";
 
         // When
-        String decrypted = newService.decrypt(encrypted);
+        String encrypted = encryptionService.encrypt(unicode);
+        String decrypted = encryptionService.decrypt(encrypted);
 
         // Then
-        assertThat(decrypted).isEqualTo(plaintext);
+        assertEquals(unicode, decrypted);
+    }
+
+    @Test
+    @DisplayName("Should handle long text encryption")
+    void shouldHandleLongTextEncryption() {
+        // Given
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < 1000; i++) {
+            sb.append("This is a long text for testing encryption performance. ");
+        }
+        String longText = sb.toString();
+
+        // When
+        String encrypted = encryptionService.encrypt(longText);
+        String decrypted = encryptionService.decrypt(encrypted);
+
+        // Then
+        assertEquals(longText, decrypted);
+        assertTrue(encrypted.length() > longText.length()); // Should be longer due to IV and encoding
+    }
+
+    @Test
+    @DisplayName("Should use proper IV format in encrypted data")
+    void shouldUseProperIVFormatInEncryptedData() {
+        // Given
+        String plaintext = "test@example.com";
+
+        // When
+        String encrypted = encryptionService.encrypt(plaintext);
+
+        // Then
+        String[] parts = encrypted.split(":");
+        assertEquals(2, parts.length);
+        
+        // IV should be 12 bytes = 16 characters when base64 encoded
+        String ivPart = parts[0];
+        assertTrue(ivPart.length() >= 16); // Base64 encoding of 12 bytes
+    }
+
+    @Test
+    @DisplayName("Should be deterministic with same master key")
+    void shouldBeDeterministicWithSameMasterKey() {
+        // Given
+        EncryptionService service1 = new EncryptionService();
+        EncryptionService service2 = new EncryptionService();
+        ReflectionTestUtils.setField(service1, "masterKeyString", "sameMasterKey123456789012345678901234");
+        ReflectionTestUtils.setField(service2, "masterKeyString", "sameMasterKey123456789012345678901234");
+        
+        String plaintext = "test@example.com";
+
+        // When
+        String encrypted1 = service1.encrypt(plaintext);
+        String decrypted2 = service2.decrypt(encrypted1);
+
+        // Then - service2 should be able to decrypt service1's encryption
+        assertEquals(plaintext, decrypted2);
     }
 
     @Test
     @DisplayName("Should fail decryption with different master key")
-    void whenUsingDifferentMasterKey_thenDecryptionFails() {
+    void shouldFailDecryptionWithDifferentMasterKey() {
         // Given
+        EncryptionService service1 = new EncryptionService();
+        EncryptionService service2 = new EncryptionService();
+        ReflectionTestUtils.setField(service1, "masterKeyString", "masterKey1234567890123456789012345678");
+        ReflectionTestUtils.setField(service2, "masterKeyString", "differentKey123456789012345678901234");
+        
         String plaintext = "test@example.com";
-        String encrypted = encryptionService.encrypt(plaintext);
+        String encrypted = service1.encrypt(plaintext);
 
-        // Create new service instance with different key
-        EncryptionService newService = new EncryptionService();
-        ReflectionTestUtils.setField(newService, "masterKeyString", "differentKey123456789012345678"); // Different 32-char key
-
-        // When & Then
-        assertThrows(RuntimeException.class, () -> newService.decrypt(encrypted));
+        // When & Then - service2 should fail to decrypt with different key
+        assertThrows(RuntimeException.class, () -> service2.decrypt(encrypted));
     }
 
     @Test
-    @DisplayName("Should validate encrypted data format")
-    void whenEncryptData_thenFormatIsValid() {
+    @DisplayName("Should handle whitespace-only input")
+    void shouldHandleWhitespaceOnlyInput() {
         // Given
-        String plaintext = "test@example.com";
+        String whitespaceOnly = "   \t\n  ";
 
         // When
-        String encrypted = encryptionService.encrypt(plaintext);
-
-        // Then
-        assertThat(encrypted).contains(":");
-        String[] parts = encrypted.split(":");
-        assertThat(parts).hasSize(2);
-        assertThat(parts[0]).isNotEmpty(); // IV part
-        assertThat(parts[1]).isNotEmpty(); // Ciphertext part
-    }
-
-    @Test
-    @DisplayName("Should handle Unicode characters")
-    void whenEncryptUnicodeText_thenDecryptCorrectly() {
-        // Given
-        String unicodeText = "用户@测试域.中国";
-
-        // When
-        String encrypted = encryptionService.encrypt(unicodeText);
+        String encrypted = encryptionService.encrypt(whitespaceOnly);
         String decrypted = encryptionService.decrypt(encrypted);
 
         // Then
-        assertThat(decrypted).isEqualTo(unicodeText);
-    }
-
-    @Test
-    @DisplayName("Should maintain data integrity across multiple operations")
-    void whenMultipleEncryptDecryptOperations_thenMaintainIntegrity() {
-        // Given
-        String[] testEmails = {
-            "user1@example.com",
-            "user2@test.org",
-            "admin@company.co.uk"
-        };
-
-        // When & Then
-        for (String email : testEmails) {
-            String encrypted = encryptionService.encrypt(email);
-            String decrypted = encryptionService.decrypt(encrypted);
-            assertThat(decrypted).isEqualTo(email);
-        }
+        assertEquals(whitespaceOnly, decrypted);
     }
 }
