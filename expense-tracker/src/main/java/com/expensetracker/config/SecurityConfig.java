@@ -16,6 +16,8 @@ import org.springframework.security.core.authority.mapping.GrantedAuthoritiesMap
 import org.springframework.security.core.authority.mapping.SimpleAuthorityMapper;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.logout.LogoutSuccessHandler;
+import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
+import org.springframework.security.web.csrf.CsrfTokenRequestAttributeHandler;
 import org.springframework.security.oauth2.client.web.DefaultOAuth2AuthorizationRequestResolver;
 import org.springframework.security.oauth2.client.web.OAuth2AuthorizationRequestResolver;
 import org.springframework.security.oauth2.client.registration.ClientRegistrationRepository;
@@ -50,7 +52,16 @@ public class SecurityConfig {
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
-                .csrf(csrf -> csrf.disable())
+                .csrf(csrf -> csrf
+                        .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
+                        .csrfTokenRequestHandler(new CsrfTokenRequestAttributeHandler())
+                        .ignoringRequestMatchers(
+                                "/oauth2/**", 
+                                "/login/oauth2/**", 
+                                "/api/auth/**",
+                                "/actuator/health"
+                        )
+                )
                 .authorizeHttpRequests(authorize -> authorize
                         .requestMatchers("/", "/login**", "/error**", "/oauth2/**").permitAll()
                         .requestMatchers("/api/auth/**").permitAll()
@@ -131,8 +142,18 @@ public class SecurityConfig {
         CorsConfiguration configuration = new CorsConfiguration();
         configuration.setAllowedOrigins(Arrays.asList(allowedOrigins));
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
-        configuration.setAllowedHeaders(List.of("*"));
+        // Specify exact headers instead of wildcard for security
+        configuration.setAllowedHeaders(Arrays.asList(
+                "Content-Type", 
+                "Authorization", 
+                "X-Requested-With", 
+                "Accept",
+                "Origin",
+                "X-CSRF-TOKEN"
+        ));
         configuration.setAllowCredentials(true);
+        // Expose CSRF token for frontend consumption
+        configuration.setExposedHeaders(Arrays.asList("X-CSRF-TOKEN"));
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", configuration);
         return source;

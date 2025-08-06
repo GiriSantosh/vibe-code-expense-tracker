@@ -21,10 +21,10 @@ public class KeycloakAdminService {
     @Value("${keycloak.auth-server-url:http://localhost:8081}")
     private String keycloakUrl;
 
-    @Value("${keycloak.admin.username:admin}")
+    @Value("${keycloak.admin.username}")
     private String adminUsername;
 
-    @Value("${keycloak.admin.password:admin}")
+    @Value("${keycloak.admin.password}")
     private String adminPassword;
 
     private final RestTemplate restTemplate = new RestTemplate();
@@ -89,7 +89,8 @@ public class KeycloakAdminService {
             }
             
         } catch (Exception e) {
-            logger.severe("Failed to get admin access token: " + e.getMessage());
+            // Do not log sensitive authentication details
+            logger.severe("Failed to get admin access token - check Keycloak admin credentials and connectivity");
         }
         
         return null;
@@ -117,7 +118,8 @@ public class KeycloakAdminService {
             return success;
             
         } catch (Exception e) {
-            logger.severe("Failed to terminate session by session ID: " + e.getMessage());
+            // Do not expose session details in logs
+            logger.severe("Failed to terminate session by session ID - check Keycloak connectivity");
             return false;
         }
     }
@@ -144,7 +146,8 @@ public class KeycloakAdminService {
             return success;
             
         } catch (Exception e) {
-            logger.severe("Failed to terminate user sessions: " + e.getMessage());
+            // Do not expose user details in logs
+            logger.severe("Failed to terminate user sessions - check Keycloak connectivity");
             return false;
         }
     }

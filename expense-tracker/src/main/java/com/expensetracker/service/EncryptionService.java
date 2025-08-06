@@ -2,14 +2,19 @@ package com.expensetracker.service;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import jakarta.annotation.PostConstruct;
 
 import javax.crypto.Cipher;
 import javax.crypto.KeyGenerator;
 import javax.crypto.SecretKey;
+import javax.crypto.SecretKeyFactory;
 import javax.crypto.spec.GCMParameterSpec;
+import javax.crypto.spec.PBEKeySpec;
 import javax.crypto.spec.SecretKeySpec;
 import java.nio.charset.StandardCharsets;
+import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
+import java.security.spec.InvalidKeySpecException;
 import java.util.Base64;
 
 @Service
@@ -19,9 +24,29 @@ public class EncryptionService {
     private static final int GCM_IV_LENGTH = 12;
     private static final int GCM_TAG_LENGTH = 16;
     private static final String SEPARATOR = ":";
+    private static final String PBKDF2_ALGORITHM = "PBKDF2WithHmacSHA256";
+    private static final int PBKDF2_ITERATIONS = 100000; // OWASP recommended minimum
+    private static final int KEY_LENGTH = 256; // bits
+    private static final byte[] STATIC_SALT = "ExpenseTracker2025-Salt-AES256-GCM".getBytes(StandardCharsets.UTF_8);
 
-    @Value("${encryption.master-key:defaultKey123456789012345678901234}")
+    @Value("${encryption.master-key:}")
     private String masterKeyString;
+    
+    @PostConstruct
+    private void validateConfiguration() {
+        if (masterKeyString == null || masterKeyString.trim().isEmpty()) {
+            throw new IllegalStateException(
+                "CRITICAL SECURITY ERROR: encryption.master-key environment variable is required and cannot be empty. " +
+                "Set ENCRYPTION_MASTER_KEY environment variable with a strong passphrase (minimum 32 characters)."
+            );
+        }
+        if (masterKeyString.length() < 32) {
+            throw new IllegalStateException(
+                "CRITICAL SECURITY ERROR: encryption.master-key must be at least 32 characters long for security. " +
+                "Current length: " + masterKeyString.length()
+            );
+        }
+    }
 
     public String encrypt(String plaintext) {
         if (plaintext == null || plaintext.isEmpty()) {
@@ -75,10 +100,20 @@ public class EncryptionService {
     }
 
     private SecretKey getSecretKey() {
-        byte[] keyBytes = masterKeyString.getBytes(StandardCharsets.UTF_8);
-        byte[] key = new byte[32]; // 256 bits
-        System.arraycopy(keyBytes, 0, key, 0, Math.min(keyBytes.length, 32));
-        return new SecretKeySpec(key, "AES");
+        try {
+            SecretKeyFactory factory = SecretKeyFactory.getInstance(PBKDF2_ALGORITHM);
+            PBEKeySpec spec = new PBEKeySpec(
+                masterKeyString.toCharArray(),
+                STATIC_SALT,
+                PBKDF2_ITERATIONS,
+                KEY_LENGTH
+            );
+            SecretKey pbkdf2Key = factory.generateSecret(spec);
+            spec.clearPassword(); // Clear sensitive data
+            return new SecretKeySpec(pbkdf2Key.getEncoded(), "AES");
+        } catch (NoSuchAlgorithmException | InvalidKeySpecException e) {
+            throw new RuntimeException("Failed to derive encryption key using PBKDF2", e);
+        }
     }
 
     private byte[] generateIV() {
