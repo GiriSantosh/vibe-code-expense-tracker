@@ -70,6 +70,10 @@ SPRING_SECURITY_OAUTH2_CLIENT_PROVIDER_KEYCLOAK_JWK_SET_URI=http://localhost:808
 KEYCLOAK_CLIENT_SECRET=6kcwPFNSwgztS4rn3cSuK6aHWt44YkaG
 ENCRYPTION_MASTER_KEY=defaultKey123456789012345678901234
 
+# Keycloak Admin Configuration (required for session termination)
+KEYCLOAK_ADMIN_USERNAME=admin
+KEYCLOAK_ADMIN_PASSWORD=admin
+
 # CORS Configuration
 CORS_ALLOWED_ORIGINS=http://localhost:3000,http://localhost:8081
 
