@@ -1,21 +1,27 @@
 package com.expensetracker.controller;
 
+import com.expensetracker.dto.LoginRequest;
+import com.expensetracker.dto.SignupRequest;
+import com.expensetracker.dto.AuthResponse;
+import com.expensetracker.dto.UserResponse;
+import com.expensetracker.service.CustomAuthService;
 import com.expensetracker.service.KeycloakAdminService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.web.authentication.logout.SecurityContextLogoutHandler;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 
 @RestController
 @RequestMapping("/api/auth")
+@CrossOrigin(origins = {"http://localhost:3000", "http://localhost:8080"})
 public class AuthController {
 
     @Value("${keycloak.external-url:http://localhost:8081}")
@@ -23,7 +29,92 @@ public class AuthController {
     
     @Autowired
     private KeycloakAdminService keycloakAdminService;
+    
+    @Autowired
+    private CustomAuthService customAuthService;
 
+    // Custom Authentication Endpoints for Material-UI Frontend
+    @PostMapping("/login")
+    public ResponseEntity<AuthResponse> login(@Valid @RequestBody LoginRequest request, HttpServletResponse response) {
+        try {
+            AuthResponse authResponse = customAuthService.authenticateUser(request, response);
+            return ResponseEntity.ok(authResponse);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(
+                AuthResponse.builder()
+                    .success(false)
+                    .message("Authentication failed: " + e.getMessage())
+                    .build()
+            );
+        }
+    }
+
+    @PostMapping("/signup")
+    public ResponseEntity<AuthResponse> signup(@Valid @RequestBody SignupRequest request, HttpServletResponse response) {
+        try {
+            AuthResponse authResponse = customAuthService.registerUser(request, response);
+            return ResponseEntity.ok(authResponse);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(
+                AuthResponse.builder()
+                    .success(false)
+                    .message("Registration failed: " + e.getMessage())
+                    .build()
+            );
+        }
+    }
+
+    @GetMapping("/user")
+    public ResponseEntity<UserResponse> getCurrentUser(Authentication authentication) {
+        try {
+            UserResponse user = customAuthService.getCurrentUser(authentication);
+            return ResponseEntity.ok(user);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(
+                UserResponse.builder()
+                    .success(false)
+                    .message("Failed to get user info: " + e.getMessage())
+                    .build()
+            );
+        }
+    }
+
+    @PostMapping("/validate")
+    public ResponseEntity<AuthResponse> validateToken(HttpServletRequest request, Authentication authentication) {
+        try {
+            boolean isValid = customAuthService.validateToken(authentication);
+            return ResponseEntity.ok(
+                AuthResponse.builder()
+                    .success(isValid)
+                    .message(isValid ? "Token is valid" : "Token is invalid")
+                    .build()
+            );
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(
+                AuthResponse.builder()
+                    .success(false)
+                    .message("Token validation failed: " + e.getMessage())
+                    .build()
+            );
+        }
+    }
+
+    @PostMapping("/refresh")
+    public ResponseEntity<AuthResponse> refreshToken(HttpServletRequest request, HttpServletResponse response) {
+        try {
+            AuthResponse authResponse = customAuthService.refreshToken(request, response);
+            return ResponseEntity.ok(authResponse);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(
+                AuthResponse.builder()
+                    .success(false)
+                    .message("Token refresh failed: " + e.getMessage())
+                    .build()
+            );
+        }
+    }
+
+    // Existing endpoints
     @GetMapping("/nuclear-logout")
     public void nuclearLogout(HttpServletRequest request, HttpServletResponse response, Authentication authentication) throws IOException, UnsupportedEncodingException {
         

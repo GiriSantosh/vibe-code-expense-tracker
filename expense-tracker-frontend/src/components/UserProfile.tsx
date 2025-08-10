@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { apiService } from '../services/apiService';
-import { User } from '../types/User';
+import { User, UserPreferences } from '../types/User';
 import { ExpenseCategory } from '../types/ExpenseCategory';
 
 export const UserProfile: React.FC = () => {
@@ -32,14 +32,14 @@ export const UserProfile: React.FC = () => {
     }
   };
 
-  const handlePreferencesUpdate = async (field: keyof User['preferences'], value: any) => {
+  const handlePreferencesUpdate = async (field: keyof UserPreferences, value: any) => {
     try {
       const updatedPreferences = await apiService.updateUserPreferences({
         [field]: value
       });
       updateUser({
         ...user,
-        preferences: { ...user.preferences, ...updatedPreferences }
+        preferences: { ...(user.preferences || {}), ...updatedPreferences }
       });
       setMessage({ type: 'success', text: 'Preferences updated!' });
     } catch (error) {
@@ -150,13 +150,13 @@ export const UserProfile: React.FC = () => {
             <div>
               <dt className="text-sm font-medium text-gray-500">Member Since</dt>
               <dd className="mt-1 text-sm text-gray-900">
-                {new Date(user.createdAt).toLocaleDateString()}
+                {user.createdAt ? new Date(user.createdAt).toLocaleDateString() : 'Unknown'}
               </dd>
             </div>
             <div>
               <dt className="text-sm font-medium text-gray-500">Last Login</dt>
               <dd className="mt-1 text-sm text-gray-900">
-                {new Date(user.lastLoginAt).toLocaleDateString()}
+                {user.lastLoginAt ? new Date(user.lastLoginAt).toLocaleDateString() : 'Unknown'}
               </dd>
             </div>
           </div>
@@ -170,7 +170,7 @@ export const UserProfile: React.FC = () => {
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">Currency</label>
             <select
-              value={user.preferences.currency}
+              value={user.preferences?.currency || 'USD'}
               onChange={(e) => handlePreferencesUpdate('currency', e.target.value)}
               className="block w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
             >
@@ -183,7 +183,7 @@ export const UserProfile: React.FC = () => {
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">Date Format</label>
             <select
-              value={user.preferences.dateFormat}
+              value={user.preferences?.dateFormat || 'MM/DD/YYYY'}
               onChange={(e) => handlePreferencesUpdate('dateFormat', e.target.value)}
               className="block w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
             >
@@ -195,7 +195,7 @@ export const UserProfile: React.FC = () => {
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">Default Category</label>
             <select
-              value={user.preferences.defaultCategory}
+              value={user.preferences?.defaultCategory || 'FOOD'}
               onChange={(e) => handlePreferencesUpdate('defaultCategory', e.target.value as ExpenseCategory)}
               className="block w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
             >
@@ -209,7 +209,7 @@ export const UserProfile: React.FC = () => {
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">Theme</label>
             <select
-              value={user.preferences.theme}
+              value={user.preferences?.theme || 'light'}
               onChange={(e) => handlePreferencesUpdate('theme', e.target.value)}
               className="block w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
             >
@@ -224,7 +224,7 @@ export const UserProfile: React.FC = () => {
             <input
               id="notifications"
               type="checkbox"
-              checked={user.preferences.enableNotifications}
+              checked={user.preferences?.enableNotifications || false}
               onChange={(e) => handlePreferencesUpdate('enableNotifications', e.target.checked)}
               className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
             />

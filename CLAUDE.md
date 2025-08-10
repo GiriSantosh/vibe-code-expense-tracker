@@ -5,9 +5,10 @@
 
 ## 🛠️ Tech Stack
 - **Backend:** Spring Boot 3.x, Java 17+, PostgreSQL, OAuth2, AES-256-GCM encryption
-- **Frontend:** React 18+, TypeScript, Tailwind CSS, Highcharts
+- **Frontend:** React 18+, TypeScript, Material-UI (MUI), Tailwind CSS, Highcharts
 - **Infrastructure:** Docker, Keycloak, PostgreSQL
 - **Testing:** JUnit 5, Jest, 70%+ coverage target
+- **Phase 4 Addition:** Material-UI for custom authentication UI
 
 ## 🔐 Security Standards
 - **OAuth2:** Authorization Code Flow with Keycloak
@@ -248,6 +249,71 @@ const validatePassword = (password: string): string[] => {
 - **Docker Dev:** `docker-compose -f docker-compose.dev.yml up`
 - **Production:** `docker-compose -f docker-compose.prod.yml up`
 - **Credentials:** `demo@expensetracker.com` / `DemoPassword123!`
+
+### **🚧 Current Development (Phase 4)**
+**Branch:** `feature-login-page-instead-of-keycloak`
+**Objective:** Custom UI authentication replacing direct Keycloak forms
+
+**Requirements:**
+- **Custom Login/Signup Pages:** Material-UI components instead of Keycloak redirect
+- **Backend Integration:** Secure API communication with Keycloak (no direct token exposure)
+- **Responsive Design:** MUI Sign-In Side Template with mobile/tablet/desktop support
+- **User Experience:** Seamless authentication without external redirects
+
+**Implementation Strategy:**
+- **Frontend:** Material-UI login/signup forms with validation and error handling
+- **Backend:** Custom authentication endpoints that communicate with Keycloak Admin API
+- **Security:** Maintain OAuth2 security while hiding Keycloak complexity from users
+- **UI/UX:** Clean, modern interface with MUI components and responsive grid system
+
+**Phase 4 Implementation Plan:**
+
+### **Frontend Components (Material-UI)**
+```typescript
+// New Components to Build:
+- LoginPage.tsx        // MUI-based login form
+- SignupPage.tsx       // MUI-based registration form
+- AuthLayout.tsx       // Shared layout for auth pages
+- PasswordStrength.tsx // Password validation indicator
+- AuthError.tsx        // Error display component
+
+// Material-UI Dependencies:
+- @mui/material
+- @mui/icons-material
+- @mui/lab (for LoadingButton)
+- @emotion/react
+- @emotion/styled
+```
+
+### **Backend API Endpoints**
+```java
+// New REST endpoints:
+POST /api/auth/login     // Custom login with Keycloak integration
+POST /api/auth/signup    // User registration via Keycloak Admin API
+POST /api/auth/validate  // Token validation and user info
+GET  /api/auth/user      // Current user profile
+POST /api/auth/refresh   // Token refresh handling
+
+// Security enhancements:
+- Custom JWT processing for Material-UI flow
+- Keycloak Admin API integration for user creation
+- Enhanced session management for custom UI
+```
+
+### **Integration Architecture**
+```
+[MUI Login Form] → [Spring Boot API] → [Keycloak Admin API] → [JWT Token] → [User Session]
+     ↓                    ↓                    ↓                ↓            ↓
+[Form Validation]   [Security Layer]    [User Creation]   [Token Store]  [Dashboard]
+```
+
+### **Key Technical Requirements**
+- **No Keycloak UI Redirect:** All authentication happens within React app
+- **Secure Token Handling:** Backend-only Keycloak communication
+- **MUI Sign-In Template:** Use Material-UI's official sign-in template as base
+- **Responsive Design:** Mobile-first approach with MUI Grid system
+- **Error Handling:** Graceful error display without exposing Keycloak internals
+- **Session Management:** Maintain existing logout and session features
 
 ### **⚠️ Known Issues**
 - **SSO Logout:** Keycloak session persistence (SIGNIFICANTLY IMPROVED with nuclear logout)

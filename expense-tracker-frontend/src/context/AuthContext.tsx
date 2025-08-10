@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { User, AuthContextType } from '../types/User';
 import { apiService } from '../services/apiService';
+import axios from 'axios';
 
 const AuthContext = createContext<AuthContextType | null>(null);
 
@@ -74,6 +75,75 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     window.location.href = `${process.env.REACT_APP_API_BASE_URL || 'http://localhost:8080'}/api/auth/nuclear-logout`;
   };
 
+  // Custom authentication methods for Material-UI login
+  const customLogin = async (email: string, password: string, rememberMe: boolean = false) => {
+    setIsLoading(true);
+    try {
+      const response = await axios.post(`${process.env.REACT_APP_API_BASE_URL || 'http://localhost:8080'}/api/auth/login`, {
+        email,
+        password,
+        rememberMe
+      }, {
+        withCredentials: true
+      });
+
+      if (response.data.success && response.data.user) {
+        const userData: User = {
+          id: response.data.user.id,
+          email: response.data.user.email,
+          firstName: response.data.user.firstName,
+          lastName: response.data.user.lastName,
+          displayName: response.data.user.displayName
+        };
+        setUser(userData);
+      } else {
+        throw new Error(response.data.message || 'Login failed');
+      }
+    } catch (error: any) {
+      if (error.response?.data?.message) {
+        throw new Error(error.response.data.message);
+      }
+      throw new Error('Login failed. Please check your credentials.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const customSignup = async (signupData: {
+    firstName: string;
+    lastName: string;
+    email: string;
+    password: string;
+  }) => {
+    setIsLoading(true);
+    try {
+      const response = await axios.post(`${process.env.REACT_APP_API_BASE_URL || 'http://localhost:8080'}/api/auth/signup`, 
+        signupData, 
+        { withCredentials: true }
+      );
+
+      if (response.data.success && response.data.user) {
+        const userData: User = {
+          id: response.data.user.id,
+          email: response.data.user.email,
+          firstName: response.data.user.firstName,
+          lastName: response.data.user.lastName,
+          displayName: response.data.user.displayName
+        };
+        setUser(userData);
+      } else {
+        throw new Error(response.data.message || 'Registration failed');
+      }
+    } catch (error: any) {
+      if (error.response?.data?.message) {
+        throw new Error(error.response.data.message);
+      }
+      throw new Error('Registration failed. Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const updateUser = (userData: Partial<User>) => {
     if (user) {
       setUser({ ...user, ...userData });
@@ -87,6 +157,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     login,
     logout,
     nuclearLogout,
+    customLogin,
+    customSignup,
     updateUser
   };
 

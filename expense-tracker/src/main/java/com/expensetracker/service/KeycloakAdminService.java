@@ -153,6 +153,82 @@ public class KeycloakAdminService {
     }
 
     /**
+     * Create a new user in Keycloak via Admin API
+     */
+    public String createUser(String email, String password, String firstName, String lastName) throws Exception {
+        try {
+            String adminToken = getAdminAccessToken();
+            if (adminToken == null) {
+                throw new RuntimeException("Failed to get admin access token");
+            }
+            
+            String usersUrl = keycloakUrl + "/admin/realms/expense-tracker/users";
+            
+            HttpHeaders headers = new HttpHeaders();
+            headers.setBearerAuth(adminToken);
+            headers.setContentType(MediaType.APPLICATION_JSON);
+            
+            // Create user representation
+            Map<String, Object> userRepresentation = Map.of(
+                "username", email,
+                "email", email,
+                "firstName", firstName,
+                "lastName", lastName,
+                "enabled", true,
+                "emailVerified", true,
+                "credentials", List.of(Map.of(
+                    "type", "password",
+                    "value", password,
+                    "temporary", false
+                ))
+            );
+            
+            HttpEntity<Map<String, Object>> request = new HttpEntity<>(userRepresentation, headers);
+            
+            ResponseEntity<String> response = restTemplate.postForEntity(usersUrl, request, String.class);
+            
+            if (response.getStatusCode() == HttpStatus.CREATED) {
+                // Extract user ID from Location header
+                String location = response.getHeaders().getLocation().toString();
+                return location.substring(location.lastIndexOf('/') + 1);
+            } else {
+                throw new RuntimeException("Failed to create user: " + response.getStatusCode());
+            }
+            
+        } catch (Exception e) {
+            logger.severe("Failed to create user: " + e.getMessage());
+            throw new Exception("User creation failed: " + e.getMessage());
+        }
+    }
+    
+    /**
+     * Check if user exists in Keycloak by email
+     */
+    public boolean userExists(String email) {
+        try {
+            String adminToken = getAdminAccessToken();
+            if (adminToken == null) return false;
+            
+            String usersUrl = keycloakUrl + "/admin/realms/expense-tracker/users?email=" + email;
+            
+            HttpHeaders headers = new HttpHeaders();
+            headers.setBearerAuth(adminToken);
+            
+            HttpEntity<Void> request = new HttpEntity<>(headers);
+            
+            ResponseEntity<List> response = restTemplate.exchange(usersUrl, HttpMethod.GET, request, List.class);
+            
+            return response.getStatusCode().is2xxSuccessful() && 
+                   response.getBody() != null && 
+                   !response.getBody().isEmpty();
+            
+        } catch (Exception e) {
+            logger.warning("Failed to check user existence: " + e.getMessage());
+            return false;
+        }
+    }
+
+    /**
      * List all active sessions for debugging
      */
     public void listActiveSessions() {
