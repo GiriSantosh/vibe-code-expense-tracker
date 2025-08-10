@@ -1,5 +1,25 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
+import {
+  Box,
+  Container,
+  Typography,
+  Grid,
+  Card,
+  CardContent,
+  Button,
+  CircularProgress,
+  Alert,
+  Paper,
+  Divider,
+  Stack,
+} from '@mui/material';
+import {
+  Add as AddIcon,
+  Visibility as ViewIcon,
+  FileDownload as ExportIcon,
+  TrendingUp as TrendingUpIcon,
+} from '@mui/icons-material';
 import ExpenseSummary from './ExpenseSummary';
 import CategoryChart from './CategoryChart';
 import ExpenseList from './ExpenseList';
@@ -41,113 +61,141 @@ export const Dashboard: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="max-w-7xl mx-auto px-4 py-8 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
-      </div>
+      <Container maxWidth="xl" sx={{ py: 4 }}>
+        <Box display="flex" justifyContent="center" alignItems="center" minHeight="50vh">
+          <CircularProgress size={60} thickness={4} />
+        </Box>
+      </Container>
     );
   }
 
   if (error) {
     return (
-      <div className="max-w-7xl mx-auto px-4 py-8">
-        <div className="bg-red-50 border border-red-200 rounded-md p-4">
-          <div className="flex">
-            <div className="ml-3">
-              <h3 className="text-sm font-medium text-red-800">Error loading dashboard</h3>
-              <div className="mt-2 text-sm text-red-700">{error}</div>
-            </div>
-          </div>
-        </div>
-      </div>
+      <Container maxWidth="xl" sx={{ py: 4 }}>
+        <Alert severity="error" variant="filled">
+          <Typography variant="subtitle1" fontWeight="medium">
+            Error loading dashboard
+          </Typography>
+          <Typography variant="body2" sx={{ mt: 1 }}>
+            {error}
+          </Typography>
+        </Alert>
+      </Container>
     );
   }
 
   return (
-    <div className="max-w-7xl mx-auto px-4 py-8">
+    <Container maxWidth="xl" sx={{ py: 4 }}>
       {/* Welcome Header */}
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900">
+      <Box mb={4}>
+        <Typography 
+          variant="h3" 
+          component="h1" 
+          fontWeight="bold" 
+          color="primary.main"
+          gutterBottom
+        >
           Welcome back, {user?.firstName || user?.username || 'User'}!
-        </h1>
-        <p className="text-gray-600 mt-2">
-          Here's your expense overview for this month
-        </p>
-      </div>
+        </Typography>
+        <Typography variant="h6" color="text.secondary">
+          Here's your expense overview and analytics
+        </Typography>
+      </Box>
 
       {/* Summary Cards */}
-      <div className="mb-8">
+      <Box mb={4}>
         <ExpenseSummary monthlySummary={monthlySummary} />
-      </div>
+      </Box>
 
       {/* Charts and Analytics */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
-        <div className="bg-white rounded-lg shadow p-6">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">
-            Expenses by Category
-          </h2>
-          <CategoryChart categorySummary={categorySummary} />
-        </div>
+      <Box sx={{ display: 'flex', gap: 3, mb: 4, flexDirection: { xs: 'column', lg: 'row' } }}>
+        <Box sx={{ flex: 2 }}>
+          <Card elevation={3}>
+            <CardContent>
+              <Typography variant="h6" fontWeight="semibold" gutterBottom>
+                <TrendingUpIcon sx={{ mr: 1, verticalAlign: 'middle' }} />
+                Expenses by Category
+              </Typography>
+              <Divider sx={{ mb: 2 }} />
+              <CategoryChart categorySummary={categorySummary} />
+            </CardContent>
+          </Card>
+        </Box>
         
-        <div className="bg-white rounded-lg shadow p-6">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">
-            Quick Actions
-          </h2>
-          <div className="space-y-3">
-            <button 
-              onClick={() => handleQuickAction('add')}
-              className="w-full text-left p-3 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
-            >
-              <div className="flex items-center justify-between">
-                <div>
-                  <div className="font-medium text-gray-900">Add New Expense</div>
-                  <div className="text-sm text-gray-500">Record a new expense</div>
-                </div>
-                <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                </svg>
-              </div>
-            </button>
-            
-            <button 
-              onClick={() => handleQuickAction('view')}
-              className="w-full text-left p-3 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
-            >
-              <div className="flex items-center justify-between">
-                <div>
-                  <div className="font-medium text-gray-900">View All Expenses</div>
-                  <div className="text-sm text-gray-500">See your complete expense history ({totalElements} total)</div>
-                </div>
-                <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                </svg>
-              </div>
-            </button>
-            
-            <button 
-              onClick={() => handleQuickAction('export')}
-              className="w-full text-left p-3 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
-            >
-              <div className="flex items-center justify-between">
-                <div>
-                  <div className="font-medium text-gray-900">Export Data</div>
-                  <div className="text-sm text-gray-500">Download your expense report</div>
-                </div>
-                <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                </svg>
-              </div>
-            </button>
-          </div>
-        </div>
-      </div>
+        <Box sx={{ flex: 1 }}>
+          <Card elevation={3}>
+            <CardContent>
+              <Typography variant="h6" fontWeight="semibold" gutterBottom>
+                Quick Actions
+              </Typography>
+              <Divider sx={{ mb: 2 }} />
+              <Stack spacing={2}>
+                <Button
+                  variant="outlined"
+                  fullWidth
+                  startIcon={<AddIcon />}
+                  onClick={() => handleQuickAction('add')}
+                  sx={{ justifyContent: 'flex-start', textAlign: 'left', py: 1.5 }}
+                >
+                  <Box sx={{ textAlign: 'left' }}>
+                    <Typography variant="subtitle2" fontWeight="medium">
+                      Add New Expense
+                    </Typography>
+                    <Typography variant="caption" color="text.secondary">
+                      Record a new expense
+                    </Typography>
+                  </Box>
+                </Button>
+                
+                <Button
+                  variant="outlined"
+                  fullWidth
+                  startIcon={<ViewIcon />}
+                  onClick={() => handleQuickAction('view')}
+                  sx={{ justifyContent: 'flex-start', textAlign: 'left', py: 1.5 }}
+                >
+                  <Box sx={{ textAlign: 'left' }}>
+                    <Typography variant="subtitle2" fontWeight="medium">
+                      View All Expenses
+                    </Typography>
+                    <Typography variant="caption" color="text.secondary">
+                      See your complete history ({totalElements} total)
+                    </Typography>
+                  </Box>
+                </Button>
+                
+                <Button
+                  variant="outlined"
+                  fullWidth
+                  startIcon={<ExportIcon />}
+                  onClick={() => handleQuickAction('export')}
+                  sx={{ justifyContent: 'flex-start', textAlign: 'left', py: 1.5 }}
+                >
+                  <Box sx={{ textAlign: 'left' }}>
+                    <Typography variant="subtitle2" fontWeight="medium">
+                      Export Data
+                    </Typography>
+                    <Typography variant="caption" color="text.secondary">
+                      Download your expense report
+                    </Typography>
+                  </Box>
+                </Button>
+              </Stack>
+            </CardContent>
+          </Card>
+        </Box>
+      </Box>
 
       {/* Recent Expenses */}
-      <div className="bg-white rounded-lg shadow">
-        <div className="p-6 border-b border-gray-200">
-          <h2 className="text-lg font-semibold text-gray-900">Recent Expenses</h2>
-        </div>
-        <ExpenseList expenses={recentExpenses} onDelete={deleteExpense} />
-      </div>
-    </div>
+      <Card elevation={3}>
+        <CardContent>
+          <Typography variant="h6" fontWeight="semibold" gutterBottom>
+            Recent Expenses
+          </Typography>
+          <Divider sx={{ mb: 2 }} />
+          <ExpenseList expenses={recentExpenses} onDelete={deleteExpense} />
+        </CardContent>
+      </Card>
+    </Container>
   );
 };

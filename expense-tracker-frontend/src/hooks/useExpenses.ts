@@ -1,12 +1,12 @@
 import { useState, useEffect } from 'react';
 import { Expense } from '../types/Expense';
 import { ExpenseCategory } from '../types/ExpenseCategory';
-import { MonthlySummary, CategorySummary } from '../types/Analytics';
+import { MonthlySummary, MonthlySummaryFormatted, CategorySummary } from '../types/Analytics';
 import { apiService } from '../services/apiService';
 
 export const useExpenses = () => {
   const [expenses, setExpenses] = useState<Expense[]>([]);
-  const [monthlySummary, setMonthlySummary] = useState<MonthlySummary[]>([]);
+  const [monthlySummary, setMonthlySummary] = useState<MonthlySummaryFormatted[]>([]);
   const [categorySummary, setCategorySummary] = useState<CategorySummary[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
@@ -72,15 +72,33 @@ export const useExpenses = () => {
     setLoading(true);
     setError(null);
     try {
+      // Default to last 12 months if no dates provided
+      const today = new Date();
+      const defaultEndDate = today.toISOString().split('T')[0];
+      const defaultStartDate = new Date(today.getFullYear() - 1, today.getMonth(), today.getDate()).toISOString().split('T')[0];
+      
       const summary = await apiService.getMonthlySummary(
-        startDate || new Date().toISOString().split('T')[0],
-        endDate || new Date().toISOString().split('T')[0]
+        startDate || defaultStartDate,
+        endDate || defaultEndDate
       );
-      setMonthlySummary(summary || []);
+      console.log('Monthly Summary API Response:', summary);
+      
+      // Transform API response to match frontend expectations
+      const formattedSummary: MonthlySummaryFormatted[] = (summary || []).map((item: MonthlySummary) => {
+        const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 
+                           'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+        return {
+          month: `${monthNames[item.month - 1]} ${item.year}`, // Format as "Aug 2025"
+          totalAmount: item.total,
+          expenseCount: 0 // API doesn't return count, set to 0 for now
+        };
+      });
+      
+      setMonthlySummary(formattedSummary);
     } catch (err) {
       setError('Failed to fetch monthly summary.');
       setMonthlySummary([]);
-      console.error(err);
+      console.error('Monthly Summary Error:', err);
     } finally {
       setLoading(false);
     }

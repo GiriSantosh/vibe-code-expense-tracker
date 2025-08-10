@@ -1,17 +1,20 @@
 import React from 'react';
 import Highcharts from 'highcharts';
 import HighchartsReact from 'highcharts-react-official';
-import { MonthlySummary } from '../types/Analytics';
+import { MonthlySummaryFormatted } from '../types/Analytics';
 
 interface MonthlySplineChartProps {
-  monthlySummary: MonthlySummary[];
+  monthlySummary: MonthlySummaryFormatted[];
 }
 
 const MonthlySplineChart: React.FC<MonthlySplineChartProps> = ({ monthlySummary }) => {
   // Defensive check for undefined/null monthlySummary
   const safeMonthlySummary = monthlySummary || [];
+  console.log('MonthlySplineChart received data:', safeMonthlySummary);
   const categories = safeMonthlySummary.map(item => item.month);
   const data = safeMonthlySummary.map(item => item.totalAmount);
+  console.log('MonthlySplineChart processed categories:', categories);
+  console.log('MonthlySplineChart processed data:', data);
 
   const options = {
     chart: {

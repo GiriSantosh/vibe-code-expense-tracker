@@ -1,4 +1,31 @@
 import React, { useState, useEffect } from 'react';
+import {
+  Container,
+  Typography,
+  Box,
+  Grid,
+  Card,
+  CardContent,
+  CircularProgress,
+  Alert,
+  Divider,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
+  Button,
+  Stack,
+  Pagination,
+  Chip,
+} from '@mui/material';
+import {
+  Add as AddIcon,
+  FilterList as FilterListIcon,
+  Assessment as AssessmentIcon,
+  TrendingUp as TrendingUpIcon,
+  List as ListIcon,
+  PieChart as PieChartIcon,
+} from '@mui/icons-material';
 import { useExpenses } from '../hooks/useExpenses';
 import ExpenseForm from './ExpenseForm';
 import ExpenseList from './ExpenseList';
@@ -54,122 +81,163 @@ export const ExpenseManagement: React.FC = () => {
     fetchMonthlySummary(startDate, endDate);
   };
 
-  const handlePageChange = (newPage: number) => {
-    setCurrentPage(newPage);
+  const handlePageChange = (_: React.ChangeEvent<unknown>, newPage: number) => {
+    setCurrentPage(newPage - 1);
   };
 
-  const handlePageSizeChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
+  const handlePageSizeChange = (event: any) => {
     setPageSize(Number(event.target.value));
     setCurrentPage(0);
   };
 
   return (
-    <div className="max-w-7xl mx-auto px-4 py-8">
+    <Container maxWidth="xl" sx={{ py: 4 }}>
       {/* Header */}
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900">Expense Management</h1>
-        <p className="text-gray-600 mt-2">
+      <Box mb={4}>
+        <Typography variant="h3" component="h1" fontWeight="bold" color="primary.main" gutterBottom>
+          Expense Management
+        </Typography>
+        <Typography variant="h6" color="text.secondary">
           Track, categorize, and analyze your personal expenses
-        </p>
-      </div>
+        </Typography>
+      </Box>
 
+      {/* Loading State */}
       {loading && (
-        <div className="text-center py-8">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto"></div>
-          <p className="text-blue-600 font-semibold mt-4">Loading data...</p>
-        </div>
+        <Box display="flex" flexDirection="column" alignItems="center" py={8}>
+          <CircularProgress size={60} thickness={4} />
+          <Typography variant="h6" color="primary.main" fontWeight="semibold" mt={2}>
+            Loading data...
+          </Typography>
+        </Box>
       )}
 
+      {/* Error State */}
       {error && (
-        <div className="bg-red-50 border border-red-200 rounded-md p-4 mb-6">
-          <p className="text-red-600 font-semibold">Error: {error}</p>
-        </div>
+        <Alert severity="error" sx={{ mb: 3 }}>
+          <Typography variant="subtitle1" fontWeight="medium">
+            Error loading expense data
+          </Typography>
+          <Typography variant="body2">
+            {error}
+          </Typography>
+        </Alert>
       )}
 
       {/* Add Expense Form and Summary */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
-        <div className="lg:col-span-2">
-          <div className="bg-white rounded-lg shadow p-6">
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">Add New Expense</h2>
-            <ExpenseForm onSubmit={handleAddExpense} isLoading={loading} />
-          </div>
-        </div>
-        <div className="lg:col-span-1">
-          <div className="bg-white rounded-lg shadow p-6">
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">Monthly Summary</h2>
-            <ExpenseSummary monthlySummary={monthlySummary} />
-          </div>
-        </div>
-      </div>
+      <Box sx={{ display: 'flex', gap: 3, mb: 4, flexDirection: { xs: 'column', lg: 'row' } }}>
+        <Box sx={{ flex: 2 }}>
+          <Card elevation={3}>
+            <CardContent>
+              <Typography variant="h5" fontWeight="semibold" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                <AddIcon /> Add New Expense
+              </Typography>
+              <Divider sx={{ mb: 3 }} />
+              <ExpenseForm onSubmit={handleAddExpense} isLoading={loading} />
+            </CardContent>
+          </Card>
+        </Box>
+        <Box sx={{ flex: 1 }}>
+          <ExpenseSummary monthlySummary={monthlySummary} />
+        </Box>
+      </Box>
 
       {/* Filters */}
-      <div className="bg-white rounded-lg shadow p-6 mb-8">
-        <h2 className="text-lg font-semibold text-gray-900 mb-4">Filter Expenses</h2>
-        <FilterControls onFilter={handleFilterExpenses} />
-      </div>
+      <Card elevation={3} sx={{ mb: 4 }}>
+        <CardContent>
+          <Typography variant="h5" fontWeight="semibold" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <FilterListIcon /> Filter Expenses
+          </Typography>
+          <Divider sx={{ mb: 3 }} />
+          <FilterControls onFilter={handleFilterExpenses} />
+        </CardContent>
+      </Card>
 
       {/* Expense List and Category Chart */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
-        <div className="lg:col-span-2">
-          <div className="bg-white rounded-lg shadow">
-            <div className="p-6 border-b border-gray-200">
-              <h2 className="text-lg font-semibold text-gray-900">Expense List</h2>
-            </div>
-            <div className="p-6">
+      <Box sx={{ display: 'flex', gap: 3, mb: 4, flexDirection: { xs: 'column', lg: 'row' } }}>
+        <Box sx={{ flex: 2 }}>
+          <Card elevation={3}>
+            <CardContent>
+              <Box display="flex" alignItems="center" justifyContent="space-between" mb={2}>
+                <Typography variant="h5" fontWeight="semibold" sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <ListIcon /> Expense List
+                </Typography>
+                <Chip 
+                  label={`${totalElements} total expenses`} 
+                  color="primary" 
+                  variant="outlined" 
+                />
+              </Box>
+              <Divider sx={{ mb: 3 }} />
+              
               <ExpenseList expenses={expenses} onDelete={handleDeleteExpense} />
-            </div>
-            
-            {/* Pagination */}
-            <div className="p-6 border-t border-gray-200">
-              <div className="flex justify-between items-center">
-                <div className="text-gray-700 font-medium">
-                  Page {currentPage + 1} of {totalPages} (Total: {totalElements} items)
-                </div>
-                <div className="flex items-center space-x-3">
-                  <label htmlFor="pageSize" className="text-gray-700">Items per page:</label>
-                  <select
-                    id="pageSize"
-                    value={pageSize}
-                    onChange={handlePageSizeChange}
-                    className="border border-gray-300 rounded-md py-2 px-3 text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  >
-                    <option value="5">5</option>
-                    <option value="10">10</option>
-                    <option value="20">20</option>
-                  </select>
-                  <button
-                    onClick={() => handlePageChange(currentPage - 1)}
-                    disabled={currentPage === 0}
-                    className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg focus:outline-none focus:shadow-outline disabled:opacity-50 disabled:cursor-not-allowed transition duration-200"
-                  >
-                    Previous
-                  </button>
-                  <button
-                    onClick={() => handlePageChange(currentPage + 1)}
-                    disabled={currentPage === totalPages - 1}
-                    className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg focus:outline-none focus:shadow-outline disabled:opacity-50 disabled:cursor-not-allowed transition duration-200"
-                  >
-                    Next
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
+              
+              {/* Pagination */}
+              <Box mt={3} pt={3} borderTop="1px solid" borderColor="divider">
+                <Box sx={{ 
+                  display: 'flex', 
+                  justifyContent: 'space-between', 
+                  alignItems: 'center',
+                  gap: 2,
+                  flexDirection: { xs: 'column', sm: 'row' }
+                }}>
+                  <Typography variant="body2" color="text.secondary">
+                    Page {currentPage + 1} of {totalPages || 1} ({totalElements} items total)
+                  </Typography>
+                  
+                  <Stack direction="row" spacing={2} alignItems="center">
+                    <Typography variant="body2" color="text.secondary">
+                      Items per page:
+                    </Typography>
+                    <FormControl size="small" sx={{ minWidth: 80 }}>
+                      <Select
+                        value={pageSize}
+                        onChange={handlePageSizeChange}
+                        variant="outlined"
+                      >
+                        <MenuItem value={5}>5</MenuItem>
+                        <MenuItem value={10}>10</MenuItem>
+                        <MenuItem value={20}>20</MenuItem>
+                      </Select>
+                    </FormControl>
+                    <Pagination
+                      count={totalPages || 1}
+                      page={currentPage + 1}
+                      onChange={handlePageChange}
+                      color="primary"
+                      showFirstButton
+                      showLastButton
+                    />
+                  </Stack>
+                </Box>
+              </Box>
+            </CardContent>
+          </Card>
+        </Box>
         
-        <div className="lg:col-span-1">
-          <div className="bg-white rounded-lg shadow p-6">
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">Expenses by Category</h2>
-            <CategoryChart categorySummary={categorySummary} />
-          </div>
-        </div>
-      </div>
+        <Box sx={{ flex: 1 }}>
+          <Card elevation={3}>
+            <CardContent>
+              <Typography variant="h5" fontWeight="semibold" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                <PieChartIcon /> Expenses by Category
+              </Typography>
+              <Divider sx={{ mb: 3 }} />
+              <CategoryChart categorySummary={categorySummary} />
+            </CardContent>
+          </Card>
+        </Box>
+      </Box>
 
       {/* Monthly Chart */}
-      <div className="bg-white rounded-lg shadow p-6">
-        <h2 className="text-lg font-semibold text-gray-900 mb-4">Monthly Trends</h2>
-        <MonthlySplineChart monthlySummary={monthlySummary} />
-      </div>
-    </div>
+      <Card elevation={3}>
+        <CardContent>
+          <Typography variant="h5" fontWeight="semibold" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <TrendingUpIcon /> Monthly Trends
+          </Typography>
+          <Divider sx={{ mb: 3 }} />
+          <MonthlySplineChart monthlySummary={monthlySummary} />
+        </CardContent>
+      </Card>
+    </Container>
   );
 };

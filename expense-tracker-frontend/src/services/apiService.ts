@@ -118,9 +118,9 @@ class ApiService {
 
   // Analytics endpoints
   async getMonthlySummary(startDate?: string, endDate?: string): Promise<Array<{
-    month: string;
-    totalAmount: number;
-    expenseCount: number;
+    year: number;
+    month: number;
+    total: number;
   }>> {
     try {
       const params: any = {};

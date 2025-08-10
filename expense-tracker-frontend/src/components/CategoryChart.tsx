@@ -15,10 +15,12 @@ interface CategoryChartProps {
 const CategoryChart: React.FC<CategoryChartProps> = ({ categorySummary }) => {
   // Defensive check for undefined/null categorySummary
   const safeCategorySummary = categorySummary || [];
+  console.log('CategoryChart received data:', safeCategorySummary);
   const data = safeCategorySummary.map(item => ({
     name: item.category,
     y: item.totalAmount,
   }));
+  console.log('CategoryChart processed data for Highcharts:', data);
 
   const options = {
     chart: {

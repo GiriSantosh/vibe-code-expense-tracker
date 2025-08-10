@@ -1,38 +1,136 @@
 import React from 'react';
-import { MonthlySummary } from '../types/Analytics';
+import {
+  Box,
+  Typography,
+  Card,
+  CardContent,
+  Grid,
+  Chip,
+  LinearProgress,
+} from '@mui/material';
+import {
+  TrendingUp as TrendingUpIcon,
+  CalendarToday as CalendarIcon,
+} from '@mui/icons-material';
+import { MonthlySummaryFormatted } from '../types/Analytics';
 
 interface ExpenseSummaryProps {
-  monthlySummary: MonthlySummary[];
+  monthlySummary: MonthlySummaryFormatted[];
 }
 
 const ExpenseSummary: React.FC<ExpenseSummaryProps> = ({ monthlySummary }) => {
   // Defensive check for undefined/null monthlySummary
   const safeMonthlySummary = monthlySummary || [];
+  console.log('ExpenseSummary received monthlySummary:', safeMonthlySummary);
+  
+  // Calculate total and find highest month
+  const totalAmount = safeMonthlySummary.reduce((acc, summary) => acc + (summary.totalAmount || 0), 0);
+  const highestMonth = safeMonthlySummary.reduce((max, current) => 
+    (current.totalAmount || 0) > (max.totalAmount || 0) ? current : max, safeMonthlySummary[0] || {});
+  
+  console.log('ExpenseSummary calculated totalAmount:', totalAmount);
+  console.log('ExpenseSummary found highestMonth:', highestMonth);
   
   return (
-    <div className="p-6 bg-white rounded-lg shadow-md h-full flex flex-col">
-      <h2 className="text-2xl font-bold text-gray-800 mb-6">Monthly Summary</h2>
-      {safeMonthlySummary.length === 0 ? (
-        <p className="text-gray-600">No monthly summary available.</p>
-      ) : (
-        <div className="flex-grow grid grid-cols-1 gap-4 overflow-y-auto pr-2">
-          {safeMonthlySummary.map((summary, index) => (
-            <div
-              key={index}
-              className="bg-gradient-to-r from-blue-50 to-blue-100 p-4 rounded-lg shadow-sm border border-blue-200 flex justify-between items-center transform transition duration-300 hover:scale-105 hover:shadow-md"
-            >
-              <div>
-                <h3 className="text-lg font-semibold text-blue-800">
-                  {summary.month}
-                </h3>
-                <p className="text-sm text-gray-600">Total Expenses</p>
-              </div>
-              <p className="text-3xl font-bold text-blue-600">${summary.totalAmount ? summary.totalAmount.toFixed(2) : '0.00'}</p>
-            </div>
-          ))}
-        </div>
-      )}
-    </div>
+    <Card elevation={3} sx={{ mb: 3 }}>
+      <CardContent>
+        <Box display="flex" alignItems="center" mb={3}>
+          <TrendingUpIcon sx={{ mr: 1, color: 'primary.main' }} />
+          <Typography variant="h5" fontWeight="bold" color="primary.main">
+            Monthly Summary
+          </Typography>
+          <Chip 
+            label={`${safeMonthlySummary.length} months`} 
+            size="small" 
+            color="primary" 
+            variant="outlined"
+            sx={{ ml: 2 }}
+          />
+        </Box>
+        
+        {safeMonthlySummary.length === 0 ? (
+          <Box textAlign="center" py={4}>
+            <CalendarIcon sx={{ fontSize: 48, color: 'text.secondary', mb: 2 }} />
+            <Typography variant="h6" color="text.secondary">
+              No monthly summary available
+            </Typography>
+            <Typography variant="body2" color="text.secondary">
+              Start adding expenses to see your monthly trends
+            </Typography>
+          </Box>
+        ) : (
+          <>
+            {/* Summary Stats */}
+            <Box sx={{ display: 'flex', gap: 2, mb: 3, flexDirection: { xs: 'column', sm: 'row' } }}>
+              <Box sx={{ flex: 1, textAlign: 'center', p: 2, bgcolor: 'primary.50', borderRadius: 2 }}>
+                <Typography variant="h4" fontWeight="bold" color="primary.main">
+                  ${totalAmount.toFixed(2)}
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  Total Expenses
+                </Typography>
+              </Box>
+              <Box sx={{ flex: 1, textAlign: 'center', p: 2, bgcolor: 'success.50', borderRadius: 2 }}>
+                <Typography variant="h6" fontWeight="bold" color="success.main">
+                  {highestMonth.month || 'N/A'}
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  Highest Spending Month
+                </Typography>
+              </Box>
+            </Box>
+            
+            {/* Monthly Breakdown */}
+            <Box>
+              <Typography variant="h6" fontWeight="semibold" mb={2}>
+                Monthly Breakdown
+              </Typography>
+              <Box sx={{ 
+                display: 'grid', 
+                gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)', md: 'repeat(3, 1fr)' },
+                gap: 2 
+              }}>
+                {safeMonthlySummary.map((summary, index) => {
+                  const percentage = totalAmount > 0 ? (summary.totalAmount || 0) / totalAmount * 100 : 0;
+                  return (
+                    <Card 
+                      key={index}
+                      variant="outlined" 
+                      sx={{ 
+                        transition: 'all 0.3s ease-in-out',
+                        '&:hover': {
+                          transform: 'translateY(-4px)',
+                          boxShadow: 4,
+                        }
+                      }}
+                    >
+                      <CardContent>
+                        <Box display="flex" justifyContent="space-between" alignItems="center" mb={1}>
+                          <Typography variant="subtitle1" fontWeight="semibold">
+                            {summary.month}
+                          </Typography>
+                          <Typography variant="h6" fontWeight="bold" color="primary.main">
+                            ${summary.totalAmount ? summary.totalAmount.toFixed(2) : '0.00'}
+                          </Typography>
+                        </Box>
+                        <LinearProgress 
+                          variant="determinate" 
+                          value={percentage} 
+                          sx={{ height: 6, borderRadius: 3, mb: 1 }}
+                        />
+                        <Typography variant="caption" color="text.secondary">
+                          {percentage.toFixed(1)}% of total
+                        </Typography>
+                      </CardContent>
+                    </Card>
+                  );
+                })}
+              </Box>
+            </Box>
+          </>
+        )}
+      </CardContent>
+    </Card>
   );
 };
 

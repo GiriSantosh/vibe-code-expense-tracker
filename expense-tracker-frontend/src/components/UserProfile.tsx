@@ -1,4 +1,39 @@
 import React, { useState } from 'react';
+import {
+  Container,
+  Paper,
+  Typography,
+  Box,
+  Grid,
+  TextField,
+  Button,
+  Card,
+  CardContent,
+  Chip,
+  Select,
+  MenuItem,
+  FormControl,
+  InputLabel,
+  FormControlLabel,
+  Switch,
+  Alert,
+  Avatar,
+  Divider,
+  Stack,
+  CircularProgress,
+} from '@mui/material';
+import {
+  Person as PersonIcon,
+  Edit as EditIcon,
+  Settings as SettingsIcon,
+  Save as SaveIcon,
+  Cancel as CancelIcon,
+  Email as EmailIcon,
+  DateRange as DateRangeIcon,
+  AccountCircle as AccountCircleIcon,
+  ExitToApp as LogoutIcon,
+  Verified as VerifiedIcon,
+} from '@mui/icons-material';
 import { useAuth } from '../context/AuthContext';
 import { apiService } from '../services/apiService';
 import { User, UserPreferences } from '../types/User';
@@ -12,7 +47,13 @@ export const UserProfile: React.FC = () => {
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
   if (!user) {
-    return <div>Loading...</div>;
+    return (
+      <Container maxWidth="md" sx={{ py: 4 }}>
+        <Box display="flex" justifyContent="center" alignItems="center" minHeight="50vh">
+          <CircularProgress size={60} thickness={4} />
+        </Box>
+      </Container>
+    );
   }
 
   const handleEditSubmit = async (e: React.FormEvent) => {
@@ -48,211 +89,292 @@ export const UserProfile: React.FC = () => {
   };
 
   return (
-    <div className="max-w-4xl mx-auto p-6 space-y-8">
+    <Container maxWidth="lg" sx={{ py: 4 }}>
       {/* Header */}
-      <div className="bg-white shadow rounded-lg p-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">User Profile</h1>
-            <p className="text-gray-600">Manage your account information and preferences</p>
-          </div>
-          <div className="flex items-center space-x-3">
-            <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
-              {user.emailVerified ? 'Email Verified' : 'Email Not Verified'}
-            </span>
-          </div>
-        </div>
-      </div>
+      <Paper elevation={3} sx={{ p: 4, mb: 4 }}>
+        <Box display="flex" alignItems="center" justifyContent="space-between">
+          <Box display="flex" alignItems="center" gap={3}>
+            <Avatar 
+              sx={{ width: 80, height: 80, bgcolor: 'primary.main', fontSize: '2rem' }}
+            >
+              {user.firstName?.[0] || user.username?.[0] || 'U'}
+            </Avatar>
+            <Box>
+              <Typography variant="h4" fontWeight="bold" color="primary.main">
+                {user.firstName && user.lastName 
+                  ? `${user.firstName} ${user.lastName}` 
+                  : user.username
+                }
+              </Typography>
+              <Typography variant="subtitle1" color="text.secondary">
+                Manage your account information and preferences
+              </Typography>
+            </Box>
+          </Box>
+          <Chip 
+            icon={user.emailVerified ? <VerifiedIcon /> : <EmailIcon />}
+            label={user.emailVerified ? 'Email Verified' : 'Email Not Verified'}
+            color={user.emailVerified ? 'success' : 'warning'}
+            variant={user.emailVerified ? 'filled' : 'outlined'}
+          />
+        </Box>
+      </Paper>
 
       {/* Messages */}
       {message && (
-        <div className={`p-4 rounded-md ${
-          message.type === 'success' ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'
-        }`}>
+        <Alert 
+          severity={message.type} 
+          sx={{ mb: 3 }}
+          onClose={() => setMessage(null)}
+        >
           {message.text}
-        </div>
+        </Alert>
       )}
 
-      {/* Profile Information */}
-      <div className="bg-white shadow rounded-lg p-6">
-        <div className="flex items-center justify-between mb-6">
-          <h2 className="text-lg font-medium text-gray-900">Profile Information</h2>
-          {!isEditing && (
-            <button
-              onClick={() => {
-                setIsEditing(true);
-                setEditForm(user);
-              }}
-              className="inline-flex items-center px-3 py-1 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
-            >
-              Edit
-            </button>
-          )}
-        </div>
+      <Box sx={{ display: 'flex', gap: 3, flexDirection: { xs: 'column', lg: 'row' } }}>
+        {/* Profile Information */}
+        <Box sx={{ flex: 2 }}>
+          <Card elevation={3}>
+            <CardContent>
+              <Box display="flex" alignItems="center" justifyContent="space-between" mb={3}>
+                <Typography variant="h5" fontWeight="semibold" sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <PersonIcon /> Profile Information
+                </Typography>
+                {!isEditing && (
+                  <Button
+                    variant="outlined"
+                    startIcon={<EditIcon />}
+                    onClick={() => {
+                      setIsEditing(true);
+                      setEditForm(user);
+                    }}
+                  >
+                    Edit
+                  </Button>
+                )}
+              </Box>
+              <Divider sx={{ mb: 3 }} />
 
-        {isEditing ? (
-          <form onSubmit={handleEditSubmit} className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700">First Name</label>
-                <input
-                  type="text"
-                  value={editForm.firstName || ''}
-                  onChange={(e) => setEditForm({ ...editForm, firstName: e.target.value })}
-                  className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+              {isEditing ? (
+                <Box component="form" onSubmit={handleEditSubmit}>
+                  <Box sx={{ display: 'flex', gap: 3, mb: 3, flexDirection: { xs: 'column', sm: 'row' } }}>
+                    <TextField
+                      fullWidth
+                      label="First Name"
+                      value={editForm.firstName || ''}
+                      onChange={(e) => setEditForm({ ...editForm, firstName: e.target.value })}
+                      variant="outlined"
+                    />
+                    <TextField
+                      fullWidth
+                      label="Last Name"
+                      value={editForm.lastName || ''}
+                      onChange={(e) => setEditForm({ ...editForm, lastName: e.target.value })}
+                      variant="outlined"
+                    />
+                  </Box>
+                  <Stack direction="row" spacing={2}>
+                    <Button
+                      type="submit"
+                      variant="contained"
+                      startIcon={isLoading ? <CircularProgress size={16} /> : <SaveIcon />}
+                      disabled={isLoading}
+                    >
+                      {isLoading ? 'Saving...' : 'Save Changes'}
+                    </Button>
+                    <Button
+                      variant="outlined"
+                      startIcon={<CancelIcon />}
+                      onClick={() => setIsEditing(false)}
+                    >
+                      Cancel
+                    </Button>
+                  </Stack>
+                </Box>
+              ) : (
+                <Box sx={{ 
+                  display: 'grid', 
+                  gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)' },
+                  gap: 3 
+                }}>
+                  <Box>
+                    <Typography variant="subtitle2" color="text.secondary" gutterBottom>
+                      Username
+                    </Typography>
+                    <Typography variant="body1" fontWeight="medium">
+                      <AccountCircleIcon sx={{ mr: 1, verticalAlign: 'middle', color: 'text.secondary' }} />
+                      {user.username}
+                    </Typography>
+                  </Box>
+                  <Box>
+                    <Typography variant="subtitle2" color="text.secondary" gutterBottom>
+                      Email
+                    </Typography>
+                    <Typography variant="body1" fontWeight="medium">
+                      <EmailIcon sx={{ mr: 1, verticalAlign: 'middle', color: 'text.secondary' }} />
+                      {apiService.maskEmail(user.email)}
+                    </Typography>
+                  </Box>
+                  <Box>
+                    <Typography variant="subtitle2" color="text.secondary" gutterBottom>
+                      First Name
+                    </Typography>
+                    <Typography variant="body1" fontWeight="medium">
+                      {user.firstName || 'Not set'}
+                    </Typography>
+                  </Box>
+                  <Box>
+                    <Typography variant="subtitle2" color="text.secondary" gutterBottom>
+                      Last Name
+                    </Typography>
+                    <Typography variant="body1" fontWeight="medium">
+                      {user.lastName || 'Not set'}
+                    </Typography>
+                  </Box>
+                  <Box>
+                    <Typography variant="subtitle2" color="text.secondary" gutterBottom>
+                      Member Since
+                    </Typography>
+                    <Typography variant="body1" fontWeight="medium">
+                      <DateRangeIcon sx={{ mr: 1, verticalAlign: 'middle', color: 'text.secondary' }} />
+                      {user.createdAt ? new Date(user.createdAt).toLocaleDateString() : 'Unknown'}
+                    </Typography>
+                  </Box>
+                  <Box>
+                    <Typography variant="subtitle2" color="text.secondary" gutterBottom>
+                      Last Login
+                    </Typography>
+                    <Typography variant="body1" fontWeight="medium">
+                      <DateRangeIcon sx={{ mr: 1, verticalAlign: 'middle', color: 'text.secondary' }} />
+                      {user.lastLoginAt ? new Date(user.lastLoginAt).toLocaleDateString() : 'Unknown'}
+                    </Typography>
+                  </Box>
+                </Box>
+              )}
+            </CardContent>
+          </Card>
+        </Box>
+        
+        {/* Preferences */}
+        <Box sx={{ flex: 1 }}>
+          <Card elevation={3}>
+            <CardContent>
+              <Typography variant="h5" fontWeight="semibold" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                <SettingsIcon /> Preferences
+              </Typography>
+              <Divider sx={{ mb: 3 }} />
+              
+              <Stack spacing={3}>
+                <FormControl fullWidth>
+                  <InputLabel>Currency</InputLabel>
+                  <Select
+                    value={user.preferences?.currency || 'USD'}
+                    label="Currency"
+                    onChange={(e) => handlePreferencesUpdate('currency', e.target.value)}
+                  >
+                    <MenuItem value="USD">USD ($)</MenuItem>
+                    <MenuItem value="EUR">EUR (€)</MenuItem>
+                    <MenuItem value="GBP">GBP (£)</MenuItem>
+                    <MenuItem value="INR">INR (₹)</MenuItem>
+                  </Select>
+                </FormControl>
+                
+                <FormControl fullWidth>
+                  <InputLabel>Date Format</InputLabel>
+                  <Select
+                    value={user.preferences?.dateFormat || 'MM/DD/YYYY'}
+                    label="Date Format"
+                    onChange={(e) => handlePreferencesUpdate('dateFormat', e.target.value)}
+                  >
+                    <MenuItem value="MM/dd/yyyy">MM/dd/yyyy</MenuItem>
+                    <MenuItem value="dd/MM/yyyy">dd/MM/yyyy</MenuItem>
+                    <MenuItem value="yyyy-MM-dd">yyyy-MM-dd</MenuItem>
+                  </Select>
+                </FormControl>
+                
+                <FormControl fullWidth>
+                  <InputLabel>Default Category</InputLabel>
+                  <Select
+                    value={user.preferences?.defaultCategory || 'FOOD'}
+                    label="Default Category"
+                    onChange={(e) => handlePreferencesUpdate('defaultCategory', e.target.value as ExpenseCategory)}
+                  >
+                    {Object.values(ExpenseCategory).map((category) => (
+                      <MenuItem key={category} value={category}>
+                        {category.replace('_', ' ')}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+                
+                <FormControl fullWidth>
+                  <InputLabel>Theme</InputLabel>
+                  <Select
+                    value={user.preferences?.theme || 'light'}
+                    label="Theme"
+                    onChange={(e) => handlePreferencesUpdate('theme', e.target.value)}
+                  >
+                    <MenuItem value="light">Light</MenuItem>
+                    <MenuItem value="dark">Dark</MenuItem>
+                    <MenuItem value="auto">Auto</MenuItem>
+                  </Select>
+                </FormControl>
+                
+                <FormControlLabel
+                  control={
+                    <Switch
+                      checked={user.preferences?.enableNotifications || false}
+                      onChange={(e) => handlePreferencesUpdate('enableNotifications', e.target.checked)}
+                      color="primary"
+                    />
+                  }
+                  label="Enable email notifications for expense reminders"
                 />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Last Name</label>
-                <input
-                  type="text"
-                  value={editForm.lastName || ''}
-                  onChange={(e) => setEditForm({ ...editForm, lastName: e.target.value })}
-                  className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                />
-              </div>
-            </div>
-            <div className="flex items-center space-x-3">
-              <button
-                type="submit"
-                disabled={isLoading}
-                className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
-              >
-                {isLoading ? 'Saving...' : 'Save Changes'}
-              </button>
-              <button
-                type="button"
-                onClick={() => setIsEditing(false)}
-                className="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
-              >
-                Cancel
-              </button>
-            </div>
-          </form>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div>
-              <dt className="text-sm font-medium text-gray-500">Username</dt>
-              <dd className="mt-1 text-sm text-gray-900">{user.username}</dd>
-            </div>
-            <div>
-              <dt className="text-sm font-medium text-gray-500">Email</dt>
-              <dd className="mt-1 text-sm text-gray-900">{apiService.maskEmail(user.email)}</dd>
-            </div>
-            <div>
-              <dt className="text-sm font-medium text-gray-500">First Name</dt>
-              <dd className="mt-1 text-sm text-gray-900">{user.firstName || 'Not set'}</dd>
-            </div>
-            <div>
-              <dt className="text-sm font-medium text-gray-500">Last Name</dt>
-              <dd className="mt-1 text-sm text-gray-900">{user.lastName || 'Not set'}</dd>
-            </div>
-            <div>
-              <dt className="text-sm font-medium text-gray-500">Member Since</dt>
-              <dd className="mt-1 text-sm text-gray-900">
-                {user.createdAt ? new Date(user.createdAt).toLocaleDateString() : 'Unknown'}
-              </dd>
-            </div>
-            <div>
-              <dt className="text-sm font-medium text-gray-500">Last Login</dt>
-              <dd className="mt-1 text-sm text-gray-900">
-                {user.lastLoginAt ? new Date(user.lastLoginAt).toLocaleDateString() : 'Unknown'}
-              </dd>
-            </div>
-          </div>
-        )}
-      </div>
-
-      {/* Preferences */}
-      <div className="bg-white shadow rounded-lg p-6">
-        <h2 className="text-lg font-medium text-gray-900 mb-6">Preferences</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Currency</label>
-            <select
-              value={user.preferences?.currency || 'USD'}
-              onChange={(e) => handlePreferencesUpdate('currency', e.target.value)}
-              className="block w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-            >
-              <option value="USD">USD ($)</option>
-              <option value="EUR">EUR (€)</option>
-              <option value="GBP">GBP (£)</option>
-              <option value="INR">INR (₹)</option>
-            </select>
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Date Format</label>
-            <select
-              value={user.preferences?.dateFormat || 'MM/DD/YYYY'}
-              onChange={(e) => handlePreferencesUpdate('dateFormat', e.target.value)}
-              className="block w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-            >
-              <option value="MM/dd/yyyy">MM/dd/yyyy</option>
-              <option value="dd/MM/yyyy">dd/MM/yyyy</option>
-              <option value="yyyy-MM-dd">yyyy-MM-dd</option>
-            </select>
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Default Category</label>
-            <select
-              value={user.preferences?.defaultCategory || 'FOOD'}
-              onChange={(e) => handlePreferencesUpdate('defaultCategory', e.target.value as ExpenseCategory)}
-              className="block w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-            >
-              {Object.values(ExpenseCategory).map((category) => (
-                <option key={category} value={category}>
-                  {category.replace('_', ' ')}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Theme</label>
-            <select
-              value={user.preferences?.theme || 'light'}
-              onChange={(e) => handlePreferencesUpdate('theme', e.target.value)}
-              className="block w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-            >
-              <option value="light">Light</option>
-              <option value="dark">Dark</option>
-              <option value="auto">Auto</option>
-            </select>
-          </div>
-        </div>
-        <div className="mt-6">
-          <div className="flex items-center">
-            <input
-              id="notifications"
-              type="checkbox"
-              checked={user.preferences?.enableNotifications || false}
-              onChange={(e) => handlePreferencesUpdate('enableNotifications', e.target.checked)}
-              className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-            />
-            <label htmlFor="notifications" className="ml-2 block text-sm text-gray-900">
-              Enable email notifications for expense reminders
-            </label>
-          </div>
-        </div>
-      </div>
+              </Stack>
+            </CardContent>
+          </Card>
+        </Box>
+      </Box>
 
       {/* Debug/Testing Section - Remove in production */}
-      <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-6">
-        <h2 className="text-lg font-medium text-yellow-800 mb-4">🧪 Logout Testing (Debug)</h2>
-        <p className="text-sm text-yellow-700 mb-4">
+      <Paper 
+        elevation={2} 
+        sx={{ 
+          p: 3, 
+          mt: 3, 
+          bgcolor: 'warning.50', 
+          border: '1px solid', 
+          borderColor: 'warning.200' 
+        }}
+      >
+        <Typography variant="h6" fontWeight="semibold" color="warning.800" gutterBottom>
+          🧪 Logout Testing (Debug)
+        </Typography>
+        <Typography variant="body2" color="warning.700" paragraph>
           Use these options if you're experiencing SSO session issues when switching between users:
-        </p>
-        <div className="space-x-3">
-          <button
+        </Typography>
+        <Stack direction="row" spacing={2} alignItems="center">
+          <Button
+            variant="outlined"
+            color="warning"
+            startIcon={<LogoutIcon />}
             onClick={nuclearLogout}
-            className="inline-flex items-center px-4 py-2 border border-yellow-600 text-sm font-medium rounded-md text-yellow-800 bg-yellow-100 hover:bg-yellow-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-500"
+            sx={{ 
+              borderColor: 'warning.600',
+              color: 'warning.800',
+              '&:hover': {
+                borderColor: 'warning.700',
+                bgcolor: 'warning.100',
+              }
+            }}
           >
             🚀 Nuclear Logout
-          </button>
-          <span className="text-sm text-yellow-600">
+          </Button>
+          <Typography variant="caption" color="warning.600">
             (Forces complete session termination + cookie clearing)
-          </span>
-        </div>
-      </div>
-    </div>
+          </Typography>
+        </Stack>
+      </Paper>
+    </Container>
   );
 };
