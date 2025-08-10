@@ -58,7 +58,7 @@ public class SecurityConfig {
                         .ignoringRequestMatchers(
                                 "/oauth2/**", 
                                 "/login/oauth2/**", 
-                                "/api/auth/**",
+                                "/api/**",
                                 "/actuator/health"
                         )
                 )

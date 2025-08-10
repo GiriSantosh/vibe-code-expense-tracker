@@ -53,13 +53,15 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     localStorage.clear();
     sessionStorage.clear();
     
-    // Use the proper OIDC logout endpoint - Spring Security + OidcClientInitiatedLogoutSuccessHandler will handle:
-    // 1. Local session invalidation
-    // 2. Cookie clearing
-    // 3. Redirect to Keycloak logout
-    // 4. Keycloak SSO session termination
-    // 5. Redirect back to frontend
-    window.location.href = `${process.env.REACT_APP_API_BASE_URL || 'http://localhost:8080'}/logout`;
+    // Create a hidden form and submit it to properly handle Spring Security logout
+    // This will follow all redirects: Backend logout -> Keycloak logout -> Frontend
+    const form = document.createElement('form');
+    form.method = 'POST';
+    form.action = `${process.env.REACT_APP_API_BASE_URL || 'http://localhost:8080'}/logout`;
+    form.style.display = 'none';
+    
+    document.body.appendChild(form);
+    form.submit();
   };
   
   // Nuclear logout for testing (fallback)
