@@ -9,7 +9,6 @@ import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.core.oidc.user.OidcUser;
@@ -24,8 +23,8 @@ import java.util.*;
 @Service
 public class CustomAuthService {
 
-    @Value("${keycloak.external-url:http://localhost:8081}")
-    private String keycloakExternalUrl;
+    @Value("${keycloak.auth-server-url:http://localhost:8081}")
+    private String keycloakAuthServerUrl;
 
     @Value("${keycloak.realm:expense-tracker}")
     private String keycloakRealm;
@@ -33,7 +32,7 @@ public class CustomAuthService {
     @Value("${keycloak.client-id:expense-tracker-backend}")
     private String keycloakClientId;
 
-    @Value("${keycloak.client-secret:}")
+    @Value("${keycloak.client-secret:6kcwPFNSwgztS4rn3cSuK6aHWt44YkaG}")
     private String keycloakClientSecret;
 
     @Autowired
@@ -46,8 +45,14 @@ public class CustomAuthService {
 
     public AuthResponse authenticateUser(LoginRequest request, HttpServletResponse response) throws Exception {
         try {
+            // Debug logging for Phase 4 troubleshooting
+            System.out.println("DEBUG: keycloakAuthServerUrl = " + keycloakAuthServerUrl);
+            System.out.println("DEBUG: keycloakRealm = " + keycloakRealm);
+            System.out.println("DEBUG: keycloakClientId = " + keycloakClientId);
+            System.out.println("DEBUG: keycloakClientSecret = " + (keycloakClientSecret != null ? keycloakClientSecret.substring(0, 8) + "..." : "null"));
+            
             // Step 1: Authenticate with Keycloak using Resource Owner Password Credentials flow
-            String tokenEndpoint = keycloakExternalUrl + "/realms/" + keycloakRealm + "/protocol/openid-connect/token";
+            String tokenEndpoint = keycloakAuthServerUrl + "/realms/" + keycloakRealm + "/protocol/openid-connect/token";
             
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
@@ -86,8 +91,9 @@ public class CustomAuthService {
             // Step 3: Create/update user in local database
             var user = userService.findOrCreateUserFromKeycloak(userInfo);
 
-            // Step 4: Set authentication context
-            setAuthenticationContext(userInfo, accessToken);
+            // Step 4: Create/update user in local database (for user management)
+            // Note: In stateless mode, no authentication context is set here
+            // Authentication happens per-request via JWT filter
 
             // Step 5: Set secure cookies if remember me is enabled
             if (request.isRememberMe()) {
@@ -130,6 +136,7 @@ public class CustomAuthService {
             loginRequest.setPassword(request.getPassword());
             loginRequest.setRememberMe(false);
 
+            // Call the updated authenticateUser method
             return authenticateUser(loginRequest, response);
 
         } catch (Exception e) {
@@ -177,7 +184,7 @@ public class CustomAuthService {
             }
 
             // Call Keycloak token refresh endpoint
-            String tokenEndpoint = keycloakExternalUrl + "/realms/" + keycloakRealm + "/protocol/openid-connect/token";
+            String tokenEndpoint = keycloakAuthServerUrl + "/realms/" + keycloakRealm + "/protocol/openid-connect/token";
             
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
@@ -238,7 +245,7 @@ public class CustomAuthService {
     }
 
     private Map<String, Object> getUserInfoFromToken(String accessToken) throws Exception {
-        String userInfoEndpoint = keycloakExternalUrl + "/realms/" + keycloakRealm + "/protocol/openid-connect/userinfo";
+        String userInfoEndpoint = keycloakAuthServerUrl + "/realms/" + keycloakRealm + "/protocol/openid-connect/userinfo";
         
         HttpHeaders headers = new HttpHeaders();
         headers.setBearerAuth(accessToken);
@@ -259,17 +266,8 @@ public class CustomAuthService {
         return userInfoResponse.getBody();
     }
 
-    private void setAuthenticationContext(Map<String, Object> userInfo, String accessToken) {
-        // Create a simple authentication token for Spring Security context
-        // In a full implementation, you might want to create a proper OAuth2AuthenticationToken
-        UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
-            userInfo.get("email"), 
-            null, 
-            Collections.emptyList()
-        );
-        authToken.setDetails(userInfo);
-        SecurityContextHolder.getContext().setAuthentication(authToken);
-    }
+    // Removed setAuthenticationContext method - no longer needed in stateless mode
+    // Authentication now happens per-request via JwtAuthenticationFilter
 
     private void setSecureCookies(HttpServletResponse response, String accessToken, String refreshToken, Integer expiresIn) {
         // Set secure HTTP-only cookies

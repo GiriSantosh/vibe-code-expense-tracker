@@ -20,8 +20,8 @@ jest.mock('highcharts/modules/solid-gauge', () => ({}));
 describe('CategoryChart', () => {
   it('renders category chart with data', () => {
     const mockCategorySummary = [
-      { category: ExpenseCategory.FOOD, total: 150.00 },
-      { category: ExpenseCategory.TRANSPORTATION, total: 75.00 },
+      { category: 'FOOD', totalAmount: 150.00, percentage: 66.7 },
+      { category: 'TRANSPORTATION', totalAmount: 75.00, percentage: 33.3 },
     ];
 
     render(<CategoryChart categorySummary={mockCategorySummary} />);

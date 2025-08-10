@@ -1,0 +1,590 @@
+{
+	"info": {
+		"_postman_id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+		"name": "Personal Expense Tracker - Material-UI Authentication API",
+		"description": "Complete API collection for Personal Expense Tracker with **Custom Material-UI Authentication** integrated with Keycloak backend.\n\n**Features:**\n- 🔒 **Hybrid Authentication:** Bearer tokens + Spring Security sessions\n- 🎨 **Material-UI Frontend:** No Keycloak redirects, seamless UX\n- 🔑 **JWT Tokens:** Access tokens for API authentication\n- 🍪 **Remember Me:** HTTP-only refresh token cookies (30 days)\n- 📊 **Full API Suite:** Authentication + Expense Management + Analytics\n- 🛡️ **Security:** OAuth2 compliance with enhanced session management\n\n**Usage:**\n1. Set environment variable: base_url\n2. Login to get access token (auto-extracted)\n3. Bearer token automatically added to all requests\n4. Test Remember Me with persistent cookies\n\n**Security:** Production-ready authentication with AES-256-GCM encryption.",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "12345678"
+	},
+	"item": [
+		{
+			"name": "🔐 Authentication",
+			"item": [
+				{
+					"name": "Login User (Custom Auth)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"// Test login success and extract access token",
+									"pm.test('Login successful', function () {",
+									"    pm.response.to.have.status(200);",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData.success).to.be.true;",
+									"    pm.expect(jsonData.accessToken).to.exist;",
+									"    pm.expect(jsonData.user).to.exist;",
+									"    pm.expect(jsonData.user.email).to.exist;",
+									"});",
+									"",
+									"// Extract and save Bearer token for subsequent requests",
+									"const jsonData = pm.response.json();",
+									"if (jsonData.success && jsonData.accessToken) {",
+									"    pm.environment.set('bearer_token', jsonData.accessToken);",
+									"    console.log('✅ Bearer token saved: ' + jsonData.accessToken.substring(0, 20) + '...');",
+									"    ",
+									"    // Save user info for reference",
+									"    pm.environment.set('user_email', jsonData.user.email);",
+									"    pm.environment.set('user_id', jsonData.user.id);",
+									"    pm.environment.set('user_name', jsonData.user.displayName);",
+									"    console.log('👤 User info saved: ' + jsonData.user.displayName + ' (' + jsonData.user.email + ')');",
+									"} else {",
+									"    console.log('❌ No access token found in response');",
+									"}",
+									"",
+									"// Check for Remember Me cookies (optional)",
+									"const accessTokenCookie = pm.cookies.get('access_token');",
+									"const refreshTokenCookie = pm.cookies.get('refresh_token');",
+									"if (refreshTokenCookie) {",
+									"    console.log('🍪 Remember Me: Refresh token cookie set');",
+									"} else {",
+									"    console.log('🚫 No Remember Me cookies (normal for rememberMe=false)');",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"email\": \"demo@expensetracker.com\",\n  \"password\": \"DemoPassword123!\",\n  \"rememberMe\": false\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/auth/login",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"auth",
+								"login"
+							]
+						},
+						"description": "🔐 **Material-UI Authentication** with custom login interface and Keycloak backend.\n\n**Features:**\n- ✅ **Hybrid Authentication:** Bearer tokens with Spring Security session persistence\n- ✅ **Custom UI:** Material-UI login form, no Keycloak redirects\n- ✅ **Session Management:** Fixed SecurityContextHolder persistence to HTTP sessions\n- ✅ **Optional Remember Me:** HTTP-only refresh token cookies (30 days)\n- ✅ **Keycloak Integration:** Resource Owner Password Credentials flow\n\n**Test Credentials:**\n- Email: `demo@expensetracker.com`\n- Password: `DemoPassword123!`\n\n**Success Response:** Returns JWT access token and establishes authenticated session.\n\n**Auto-Setup:** Token automatically saved to environment for subsequent requests."
+					}
+				},
+				{
+					"name": "Login with Remember Me",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Remember Me login successful', function () {",
+									"    pm.response.to.have.status(200);",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData.success).to.be.true;",
+									"});",
+									"",
+									"// Check for Remember Me cookies",
+									"const accessTokenCookie = pm.cookies.get('access_token');",
+									"const refreshTokenCookie = pm.cookies.get('refresh_token');",
+									"",
+									"pm.test('Remember Me cookies set', function () {",
+									"    pm.expect(accessTokenCookie || refreshTokenCookie).to.exist;",
+									"});",
+									"",
+									"if (refreshTokenCookie) {",
+									"    console.log('Refresh token cookie set for 30 days');",
+									"    pm.environment.set('refresh_token_cookie', refreshTokenCookie);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"email\": \"demo@expensetracker.com\",\n  \"password\": \"DemoPassword123!\",\n  \"rememberMe\": true\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/auth/login",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"auth",
+								"login"
+							]
+						},
+						"description": "Test Remember Me functionality with persistent cookies.\n\n**Remember Me Features:**\n- Access token cookie (expires with JWT)\n- Refresh token cookie (30 days)\n- HTTP-only cookies for security\n- Automatic session restoration\n\n**Security:** Tokens stored in HTTP-only cookies prevent XSS attacks."
+					}
+				},
+				{
+					"name": "Register New User",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Registration successful or user exists', function () {",
+									"    // Accept both success (200) and user exists error (400)",
+									"    pm.expect(pm.response.code).to.be.oneOf([200, 400]);",
+									"    ",
+									"    if (pm.response.code === 200) {",
+									"        const jsonData = pm.response.json();",
+									"        pm.expect(jsonData.success).to.be.true;",
+									"        pm.expect(jsonData.user).to.exist;",
+									"        console.log('New user registered successfully');",
+									"    } else {",
+									"        console.log('User already exists (expected for demo)');",
+									"    }",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"firstName\": \"Test\",\n  \"lastName\": \"User\",\n  \"email\": \"test.user@example.com\",\n  \"password\": \"TestPassword123!\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/auth/signup",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"auth",
+								"signup"
+							]
+						},
+						"description": "Register new user via Keycloak Admin API.\n\n**Features:**\n- Creates user in Keycloak\n- Automatically logs in new user\n- Returns authentication session\n- Validates password strength\n\n**Note:** Change email to create unique users."
+					}
+				},
+				{
+					"name": "Get Current User",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('User info retrieved successfully', function () {",
+									"    pm.response.to.have.status(200);",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData.success).to.be.true;",
+									"    pm.expect(jsonData.email).to.exist;",
+									"    pm.expect(jsonData.displayName).to.exist;",
+									"});",
+									"",
+									"// Verify user details",
+									"const jsonData = pm.response.json();",
+									"console.log('Current user: ' + jsonData.displayName + ' (' + jsonData.email + ')');",
+									"console.log('Email verified: ' + jsonData.emailVerified);"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/auth/user",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"auth",
+								"user"
+							]
+						},
+						"description": "Retrieve authenticated user's profile information.\n\n**Requirements:** Must be logged in with valid Bearer token or active session.\n\n**Returns:**\n- User ID, email, name\n- Email verification status\n- Account details\n\n**Security:** Uses Bearer token authentication with session persistence."
+					}
+				},
+				{
+					"name": "Validate Authentication",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Authentication validation', function () {",
+									"    if (pm.response.code === 200) {",
+									"        const jsonData = pm.response.json();",
+									"        pm.expect(jsonData.success).to.be.true;",
+									"        console.log('Authentication valid: ' + jsonData.message);",
+									"    } else {",
+									"        console.log('Authentication invalid - please login first');",
+									"    }",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/auth/validate",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"auth",
+								"validate"
+							]
+						},
+						"description": "Validate current authentication status.\n\n**Use Cases:**\n- Check if user is still authenticated\n- Verify session validity\n- Frontend authentication checks\n\n**Returns:** Success if valid session exists."
+					}
+				},
+				{
+					"name": "Refresh Token",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Token refresh', function () {",
+									"    if (pm.response.code === 200) {",
+									"        const jsonData = pm.response.json();",
+									"        pm.expect(jsonData.success).to.be.true;",
+									"        pm.expect(jsonData.accessToken).to.exist;",
+									"        console.log('Token refreshed successfully');",
+									"    } else {",
+									"        console.log('Token refresh failed - no refresh token available');",
+									"    }",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/auth/refresh",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"auth",
+								"refresh"
+							]
+						},
+						"description": "Refresh access token using stored refresh token cookie.\n\n**Requirements:**\n- Must have refresh_token cookie (set during Remember Me login)\n- Refresh token must be valid and not expired\n\n**Returns:** New access token and refresh token.\n\n**Note:** Only works if Remember Me was enabled during login."
+					}
+				},
+				{
+					"name": "Nuclear Logout",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Logout initiated', function () {",
+									"    // Logout returns redirect (302) or success",
+									"    pm.expect(pm.response.code).to.be.oneOf([200, 302]);",
+									"});",
+									"",
+									"// Clear stored authentication info",
+									"pm.environment.unset('bearer_token');",
+									"pm.environment.unset('user_email');",
+									"pm.environment.unset('user_id');",
+									"pm.environment.unset('user_name');",
+									"console.log('🔓 Bearer token and user info cleared - logout complete');"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/auth/nuclear-logout",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"auth",
+								"nuclear-logout"
+							]
+						},
+						"description": "Complete logout with full session termination.\n\n**Nuclear Logout Process:**\n1. Terminates Keycloak session via Admin API\n2. Clears Spring Security context\n3. Removes all authentication cookies (access_token, refresh_token)\n4. Invalidates HTTP session\n5. Clears localStorage and sessionStorage on frontend\n6. Returns success response (no Keycloak redirects)\n\n**Result:** User completely logged out from all systems with seamless UX."
+					}
+				}
+			],
+			"description": "Complete authentication system with custom Material-UI interface and Keycloak backend integration."
+		},
+		{
+			"name": "📊 Expense Management",
+			"item": [
+				{
+					"name": "Get Expenses (Paginated)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Expenses retrieved successfully', function () {",
+									"    if (pm.response.code === 200) {",
+									"        const jsonData = pm.response.json();",
+									"        pm.expect(jsonData.content).to.be.an('array');",
+									"        pm.expect(jsonData.totalElements).to.be.a('number');",
+									"        console.log('Found ' + jsonData.totalElements + ' expenses');",
+									"    } else if (pm.response.code === 403) {",
+									"        console.log('Access denied - please login first');",
+									"    } else {",
+									"        console.log('Unexpected response: ' + pm.response.code);",
+									"    }",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/expenses?page=0&size=10",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"expenses"
+							],
+							"query": [
+								{
+									"key": "page",
+									"value": "0",
+									"description": "Page number (0-based)"
+								},
+								{
+									"key": "size",
+									"value": "10",
+									"description": "Number of items per page"
+								}
+							]
+						},
+						"description": "Retrieve paginated list of user's expenses.\n\n**Authentication Required:** Must be logged in with valid session.\n\n**Query Parameters:**\n- page: Page number (default: 0)\n- size: Items per page (default: 10)\n\n**Returns:** Paginated expense list with metadata."
+					}
+				},
+				{
+					"name": "Get Monthly Summary",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Monthly summary retrieved', function () {",
+									"    if (pm.response.code === 200) {",
+									"        const jsonData = pm.response.json();",
+									"        pm.expect(jsonData).to.be.an('array');",
+									"        console.log('Monthly summary data points: ' + jsonData.length);",
+									"        ",
+									"        if (jsonData.length > 0) {",
+									"            pm.expect(jsonData[0].month).to.exist;",
+									"            pm.expect(jsonData[0].totalAmount).to.be.a('number');",
+									"        }",
+									"    } else if (pm.response.code === 403) {",
+									"        console.log('Access denied - please login first');",
+									"    }",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/expenses/summary?startDate=2025-01-01&endDate=2025-12-31",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"expenses",
+								"summary"
+							],
+							"query": [
+								{
+									"key": "startDate",
+									"value": "2025-01-01",
+									"description": "Start date (YYYY-MM-DD)"
+								},
+								{
+									"key": "endDate",
+									"value": "2025-12-31",
+									"description": "End date (YYYY-MM-DD)"
+								}
+							]
+						},
+						"description": "Get monthly expense summary for analytics dashboard.\n\n**Authentication Required:** Must be logged in.\n\n**Query Parameters:**\n- startDate: Beginning of date range\n- endDate: End of date range\n\n**Returns:** Monthly breakdown with totals and counts."
+					}
+				},
+				{
+					"name": "Get Category Summary",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Category summary retrieved', function () {",
+									"    if (pm.response.code === 200) {",
+									"        const jsonData = pm.response.json();",
+									"        pm.expect(jsonData).to.be.an('array');",
+									"        console.log('Category breakdown: ' + jsonData.length + ' categories');",
+									"        ",
+									"        if (jsonData.length > 0) {",
+									"            pm.expect(jsonData[0].category).to.exist;",
+									"            pm.expect(jsonData[0].totalAmount).to.be.a('number');",
+									"            pm.expect(jsonData[0].percentage).to.be.a('number');",
+									"        }",
+									"    } else if (pm.response.code === 403) {",
+									"        console.log('Access denied - please login first');",
+									"    }",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/expenses/category-summary",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"expenses",
+								"category-summary"
+							]
+						},
+						"description": "Get expense breakdown by category for pie charts and analytics.\n\n**Authentication Required:** Must be logged in.\n\n**Returns:** Category-wise totals with percentages for visualization."
+					}
+				}
+			],
+			"description": "Expense management endpoints requiring authentication. All endpoints protected by Spring Security with Bearer token and session-based authentication."
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					"// Auto-add Bearer token if available (for protected endpoints)",
+					"const bearerToken = pm.environment.get('bearer_token');",
+					"if (bearerToken && pm.request.url.path && pm.request.url.path.includes('api') && !pm.request.url.path.includes('auth')) {",
+					"    pm.request.headers.add({",
+					"        key: 'Authorization',",
+					"        value: 'Bearer ' + bearerToken",
+					"    });",
+					"    console.log('🔑 Bearer token added to request: ' + bearerToken.substring(0, 20) + '...');",
+					"} else if (!bearerToken && pm.request.url.path && pm.request.url.path.includes('api') && !pm.request.url.path.includes('auth')) {",
+					"    console.log('⚠️ No Bearer token available - please login first');",
+					"}"
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					"// Global test for session management",
+					"if (pm.response.code === 401) {",
+					"    console.log('🔒 Authentication required - please login first');",
+					"} else if (pm.response.code === 403) {",
+					"    console.log('🚫 Access denied - insufficient permissions');",
+					"}"
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "base_url",
+			"value": "http://localhost:8080",
+			"description": "Base URL for the Personal Expense Tracker API"
+		},
+		{
+			"key": "bearer_token",
+			"value": "",
+			"description": "JWT Bearer token for hybrid authentication with session persistence (auto-populated after login)"
+		},
+		{
+			"key": "user_email",
+			"value": "",
+			"description": "Current user's email (auto-populated after login)"
+		},
+		{
+			"key": "user_id",
+			"value": "",
+			"description": "Current user's ID (auto-populated after login)"
+		},
+		{
+			"key": "user_name",
+			"value": "",
+			"description": "Current user's display name (auto-populated after login)"
+		}
+	]
+}

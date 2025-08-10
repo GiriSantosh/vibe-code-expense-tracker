@@ -1,10 +1,5 @@
 import React from 'react';
-
-interface MonthlySummary {
-  year: number;
-  month: number;
-  total: number;
-}
+import { MonthlySummary } from '../types/Analytics';
 
 interface ExpenseSummaryProps {
   monthlySummary: MonthlySummary[];
@@ -28,11 +23,11 @@ const ExpenseSummary: React.FC<ExpenseSummaryProps> = ({ monthlySummary }) => {
             >
               <div>
                 <h3 className="text-lg font-semibold text-blue-800">
-                  {summary.year}-{String(summary.month).padStart(2, '0')}
+                  {summary.month}
                 </h3>
                 <p className="text-sm text-gray-600">Total Expenses</p>
               </div>
-              <p className="text-3xl font-bold text-blue-600">${summary.total ? summary.total.toFixed(2) : '0.00'}</p>
+              <p className="text-3xl font-bold text-blue-600">${summary.totalAmount ? summary.totalAmount.toFixed(2) : '0.00'}</p>
             </div>
           ))}
         </div>

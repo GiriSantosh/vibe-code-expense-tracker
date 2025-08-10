@@ -1,12 +1,7 @@
 import React from 'react';
 import Highcharts from 'highcharts';
 import HighchartsReact from 'highcharts-react-official';
-
-interface MonthlySummary {
-  year: number;
-  month: number;
-  total: number;
-}
+import { MonthlySummary } from '../types/Analytics';
 
 interface MonthlySplineChartProps {
   monthlySummary: MonthlySummary[];
@@ -15,8 +10,8 @@ interface MonthlySplineChartProps {
 const MonthlySplineChart: React.FC<MonthlySplineChartProps> = ({ monthlySummary }) => {
   // Defensive check for undefined/null monthlySummary
   const safeMonthlySummary = monthlySummary || [];
-  const categories = safeMonthlySummary.map(item => `${item.year}-${String(item.month).padStart(2, '0')}`);
-  const data = safeMonthlySummary.map(item => item.total);
+  const categories = safeMonthlySummary.map(item => item.month);
+  const data = safeMonthlySummary.map(item => item.totalAmount);
 
   const options = {
     chart: {

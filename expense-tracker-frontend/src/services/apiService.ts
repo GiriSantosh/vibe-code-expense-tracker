@@ -1,73 +1,61 @@
-import axios, { AxiosInstance, AxiosRequestConfig } from 'axios';
+import { AxiosRequestConfig } from 'axios';
 import { Expense } from '../types/Expense';
 import { ExpenseCategory } from '../types/ExpenseCategory';
 import { User } from '../types/User';
-
-const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'http://localhost:8080';
+import apiClient from './axiosConfig';
 
 class ApiService {
-  private api: AxiosInstance;
-
   constructor() {
-    this.api = axios.create({
-      baseURL: API_BASE_URL,
-      withCredentials: true,
-      headers: {
-        'Content-Type': 'application/json',
-      },
-    });
-
-    this.setupInterceptors();
+    // Use the pre-configured axios client with Bearer token interceptors
   }
 
-  private setupInterceptors() {
-    // Request interceptor
-    this.api.interceptors.request.use(
-      (config) => {
-        // Add any additional headers or authentication logic here
-        return config;
-      },
-      (error) => {
-        return Promise.reject(error);
-      }
-    );
-
-    // Response interceptor
-    this.api.interceptors.response.use(
-      (response) => {
-        return response;
-      },
-      (error) => {
-        // Don't auto-redirect on 401 for auth status checks - let PrivateRoute handle it
-        const isAuthCheck = error.config?.url?.includes('/api/me');
-        if (error.response?.status === 401 && !isAuthCheck) {
-          // Only redirect to login for non-auth-check API calls
-          window.location.href = `${API_BASE_URL}/oauth2/authorization/keycloak`;
-        }
-        return Promise.reject(error);
-      }
-    );
+  private handleError(error: any) {
+    // Centralized error handling
+    if (error.response?.data?.message) {
+      throw new Error(error.response.data.message);
+    }
+    throw error;
   }
 
   // User endpoints
   async getCurrentUser(): Promise<User> {
-    const response = await this.api.get('/api/me');
-    return response.data;
+    try {
+      const response = await apiClient.get('/api/me');
+      return response.data;
+    } catch (error) {
+      this.handleError(error);
+      throw error;
+    }
   }
 
   async updateUserProfile(userData: Partial<User>): Promise<User> {
-    const response = await this.api.put('/api/me', userData);
-    return response.data;
+    try {
+      const response = await apiClient.put('/api/me', userData);
+      return response.data;
+    } catch (error) {
+      this.handleError(error);
+      throw error;
+    }
   }
 
   async getUserPreferences(): Promise<User['preferences']> {
-    const response = await this.api.get('/api/me/preferences');
-    return response.data;
+    try {
+      const response = await apiClient.get('/api/me/preferences');
+      return response.data;
+    } catch (error) {
+      this.handleError(error);
+      throw error;
+    }
   }
 
   async updateUserPreferences(preferences: Partial<User['preferences']>): Promise<User['preferences']> {
-    const response = await this.api.put('/api/me/preferences', preferences);
-    return response.data;
+    try {
+      const response = await apiClient.put('/api/me/preferences', preferences);
+      return response.data;
+    } catch (error) {
+      this.handleError(error);
+      throw error;
+    }
   }
 
   // Expense endpoints
@@ -78,61 +66,132 @@ class ApiService {
     startDate?: string;
     endDate?: string;
   }): Promise<{ content: Expense[]; totalElements: number; totalPages: number }> {
-    const response = await this.api.get('/api/expenses', { params });
-    console.log('API Response:', response.data);
-    console.log('Response keys:', Object.keys(response.data || {}));
-    console.log('Content:', response.data?.content);
-    console.log('Content length:', response.data?.content?.length);
-    return response.data;
+    try {
+      const response = await apiClient.get('/api/expenses', { 
+        params: params || {} 
+      });
+      return response.data;
+    } catch (error) {
+      this.handleError(error);
+      throw error;
+    }
   }
 
   async getExpenseById(id: number): Promise<Expense> {
-    const response = await this.api.get(`/api/expenses/${id}`);
-    return response.data;
+    try {
+      const response = await apiClient.get(`/api/expenses/${id}`);
+      return response.data;
+    } catch (error) {
+      this.handleError(error);
+      throw error;
+    }
   }
 
-  async createExpense(expense: Omit<Expense, 'id' | 'createdAt'>): Promise<Expense> {
-    const response = await this.api.post('/api/expenses', expense);
-    return response.data;
+  async createExpense(expenseData: Omit<Expense, 'id' | 'createdAt' | 'updatedAt'>): Promise<Expense> {
+    try {
+      const response = await apiClient.post('/api/expenses', expenseData);
+      return response.data;
+    } catch (error) {
+      this.handleError(error);
+      throw error;
+    }
+  }
+
+  async updateExpense(id: number, expenseData: Partial<Expense>): Promise<Expense> {
+    try {
+      const response = await apiClient.put(`/api/expenses/${id}`, expenseData);
+      return response.data;
+    } catch (error) {
+      this.handleError(error);
+      throw error;
+    }
   }
 
   async deleteExpense(id: number): Promise<void> {
-    await this.api.delete(`/api/expenses/${id}`);
+    try {
+      await apiClient.delete(`/api/expenses/${id}`);
+    } catch (error) {
+      this.handleError(error);
+      throw error;
+    }
   }
 
-  async getMonthlySummary(startDate: string, endDate: string): Promise<any[]> {
-    const response = await this.api.get('/api/expenses/summary', {
-      params: { startDate, endDate }
-    });
-    return response.data;
+  // Analytics endpoints
+  async getMonthlySummary(startDate?: string, endDate?: string): Promise<Array<{
+    month: string;
+    totalAmount: number;
+    expenseCount: number;
+  }>> {
+    try {
+      const params: any = {};
+      if (startDate) params.startDate = startDate;
+      if (endDate) params.endDate = endDate;
+      
+      const response = await apiClient.get('/api/expenses/summary', { params });
+      return response.data;
+    } catch (error) {
+      this.handleError(error);
+      throw error;
+    }
   }
 
-  async getCategorySummary(): Promise<any[]> {
-    const response = await this.api.get('/api/expenses/category-summary');
-    return response.data;
+  async getCategorySummary(): Promise<Array<{
+    category: string;
+    totalAmount: number;
+    percentage: number;
+  }>> {
+    try {
+      const response = await apiClient.get('/api/expenses/category-summary');
+      return response.data;
+    } catch (error) {
+      this.handleError(error);
+      throw error;
+    }
   }
 
-  // Authentication endpoints
-  async logout(): Promise<void> {
-    await this.api.post('/logout');
+  async getRecentExpenses(limit: number = 5): Promise<Expense[]> {
+    try {
+      const response = await apiClient.get('/api/expenses/recent', {
+        params: { limit }
+      });
+      return response.data;
+    } catch (error) {
+      this.handleError(error);
+      throw error;
+    }
   }
 
-  // Utility method to mask email for privacy
+  async getTotalExpenses(): Promise<{ total: number; count: number }> {
+    try {
+      const response = await apiClient.get('/api/expenses/total');
+      return response.data;
+    } catch (error) {
+      this.handleError(error);
+      throw error;
+    }
+  }
+
+  // Utility method for email masking
   maskEmail(email: string): string {
-    if (!email || !email.includes('@')) return email;
-    
+    if (!email) return '';
     const [username, domain] = email.split('@');
-    const maskedUsername = username.length > 1 
-      ? username[0] + '*'.repeat(Math.max(username.length - 2, 0)) + (username.length > 1 ? username[username.length - 1] : '')
-      : username;
-    
-    const [domainName, tld] = domain.split('.');
-    const maskedDomain = domainName.length > 1
-      ? domainName[0] + '*'.repeat(Math.max(domainName.length - 2, 0)) + (domainName.length > 1 ? domainName[domainName.length - 1] : '')
-      : domainName;
-    
-    return `${maskedUsername}@${maskedDomain}.${tld}`;
+    if (!domain) return email;
+    const maskedUsername = username.charAt(0) + '*'.repeat(Math.max(0, username.length - 2)) + username.charAt(username.length - 1);
+    const maskedDomain = '*'.repeat(domain.length - 4) + domain.slice(-4);
+    return `${maskedUsername}@${maskedDomain}`;
+  }
+
+  // Generic request method for custom API calls
+  async makeRequest(config: AxiosRequestConfig) {
+    try {
+      const response = await apiClient(config);
+      return response.data;
+    } catch (error) {
+      this.handleError(error);
+      throw error;
+    }
   }
 }
 
+// Export singleton instance
 export const apiService = new ApiService();

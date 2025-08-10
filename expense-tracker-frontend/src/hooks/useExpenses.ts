@@ -1,18 +1,8 @@
 import { useState, useEffect } from 'react';
 import { Expense } from '../types/Expense';
 import { ExpenseCategory } from '../types/ExpenseCategory';
+import { MonthlySummary, CategorySummary } from '../types/Analytics';
 import { apiService } from '../services/apiService';
-
-interface MonthlySummary {
-  year: number;
-  month: number;
-  total: number;
-}
-
-interface CategorySummary {
-  category: ExpenseCategory;
-  total: number;
-}
 
 export const useExpenses = () => {
   const [expenses, setExpenses] = useState<Expense[]>([]);

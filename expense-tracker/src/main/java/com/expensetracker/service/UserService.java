@@ -11,6 +11,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.Map;
 import java.util.Optional;
 
 @Service
@@ -100,6 +101,39 @@ public class UserService {
 
     public User findByUsername(String username) {
         return userRepository.findByUsername(username).orElse(null);
+    }
+
+    public User findOrCreateUserFromKeycloak(Map<String, Object> userInfo) {
+        String email = (String) userInfo.get("email");
+        String username = (String) userInfo.get("preferred_username");
+        String firstName = (String) userInfo.get("given_name");
+        String lastName = (String) userInfo.get("family_name");
+        Boolean emailVerified = (Boolean) userInfo.get("email_verified");
+        String userId = (String) userInfo.get("sub");
+
+        // Try to find existing user by email or username
+        Optional<User> existingUser = userRepository.findByEmail(email);
+        if (existingUser.isEmpty() && username != null) {
+            existingUser = userRepository.findByUsername(username);
+        }
+
+        if (existingUser.isPresent()) {
+            User user = existingUser.get();
+            user.setLastLoginAt(LocalDateTime.now());
+            user.setEmailVerified(emailVerified != null ? emailVerified : false);
+            return userRepository.save(user);
+        } else {
+            // Create new user
+            User newUser = new User(username != null ? username : email, email, firstName, lastName);
+            newUser.setEmailVerified(emailVerified != null ? emailVerified : false);
+            newUser.setLastLoginAt(LocalDateTime.now());
+            
+            // Create default preferences
+            UserPreferences preferences = new UserPreferences(newUser);
+            newUser.setPreferences(preferences);
+            
+            return userRepository.save(newUser);
+        }
     }
 
     private String extractUsername(Authentication authentication) {

@@ -25,6 +25,10 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-oauth2-client'
     implementation 'org.springframework.boot:spring-boot-starter-actuator'
     
+    // Lombok for boilerplate code reduction
+    compileOnly 'org.projectlombok:lombok'
+    annotationProcessor 'org.projectlombok:lombok'
+    
     // Database drivers
     runtimeOnly 'com.h2database:h2'
     runtimeOnly 'org.postgresql:postgresql'

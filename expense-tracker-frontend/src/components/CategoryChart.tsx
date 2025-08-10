@@ -6,11 +6,7 @@ import 'highcharts/highcharts-more';
 import 'highcharts/modules/solid-gauge';
 
 import { ExpenseCategory } from '../types/ExpenseCategory';
-
-interface CategorySummary {
-  category: ExpenseCategory;
-  total: number;
-}
+import { CategorySummary } from '../types/Analytics';
 
 interface CategoryChartProps {
   categorySummary: CategorySummary[];
@@ -21,7 +17,7 @@ const CategoryChart: React.FC<CategoryChartProps> = ({ categorySummary }) => {
   const safeCategorySummary = categorySummary || [];
   const data = safeCategorySummary.map(item => ({
     name: item.category,
-    y: item.total,
+    y: item.totalAmount,
   }));
 
   const options = {

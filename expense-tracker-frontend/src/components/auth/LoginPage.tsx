@@ -3,15 +3,12 @@ import { useNavigate, Link as RouterLink } from 'react-router-dom';
 import {
   Box,
   TextField,
-  Button,
   Link,
   Alert,
-  Divider,
   IconButton,
   InputAdornment,
   FormControlLabel,
   Checkbox,
-  CircularProgress,
 } from '@mui/material';
 import { LoadingButton } from '@mui/lab';
 import {
@@ -19,7 +16,6 @@ import {
   VisibilityOff,
   Email,
   Lock,
-  Google as GoogleIcon,
 } from '@mui/icons-material';
 import AuthLayout from './AuthLayout';
 import { useAuth } from '../../context/AuthContext';
@@ -68,10 +64,6 @@ const LoginPage: React.FC = () => {
     }
   };
 
-  const handleGoogleLogin = () => {
-    // For now, redirect to existing OAuth2 flow as fallback
-    window.location.href = `${process.env.REACT_APP_API_BASE_URL || 'http://localhost:8080'}/oauth2/authorization/keycloak`;
-  };
 
   return (
     <AuthLayout
@@ -179,32 +171,6 @@ const LoginPage: React.FC = () => {
         >
           {loading ? 'Signing In...' : 'Sign In'}
         </LoadingButton>
-
-        <Divider sx={{ mb: 3 }}>
-          <Box sx={{ px: 2, color: 'text.secondary', fontSize: '0.875rem' }}>
-            Or continue with
-          </Box>
-        </Divider>
-
-        <Button
-          fullWidth
-          variant="outlined"
-          onClick={handleGoogleLogin}
-          disabled={loading}
-          startIcon={loading ? <CircularProgress size={20} /> : <GoogleIcon />}
-          sx={{ 
-            mb: 3,
-            py: 1.5,
-            borderColor: 'rgba(0,0,0,0.2)',
-            color: 'text.primary',
-            '&:hover': {
-              borderColor: 'primary.main',
-              backgroundColor: 'rgba(0,0,0,0.04)',
-            },
-          }}
-        >
-          Continue with Google
-        </Button>
 
         <Box sx={{ textAlign: 'center' }}>
           <Link

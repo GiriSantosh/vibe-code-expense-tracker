@@ -21,7 +21,7 @@ import java.io.UnsupportedEncodingException;
 
 @RestController
 @RequestMapping("/api/auth")
-@CrossOrigin(origins = {"http://localhost:3000", "http://localhost:8080"})
+@CrossOrigin(origins = {"http://localhost:3000", "http://localhost:3001", "http://localhost:8080"})
 public class AuthController {
 
     @Value("${keycloak.external-url:http://localhost:8081}")

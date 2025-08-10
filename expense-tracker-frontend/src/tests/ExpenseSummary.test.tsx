@@ -5,8 +5,8 @@ import ExpenseSummary from '../components/ExpenseSummary';
 describe('ExpenseSummary', () => {
   it('renders monthly summary correctly', () => {
     const mockMonthlySummary = [
-      { year: 2023, month: 1, total: 150.00 },
-      { year: 2023, month: 2, total: 200.50 },
+      { month: '2023-01', totalAmount: 150.00, expenseCount: 5 },
+      { month: '2023-02', totalAmount: 200.50, expenseCount: 8 },
     ];
 
     render(<ExpenseSummary monthlySummary={mockMonthlySummary} />);

@@ -1,6 +1,8 @@
 package com.expensetracker.config;
 
-import com.expensetracker.security.OAuth2LoginSuccessHandler;
+// Phase 4: OAuth2LoginSuccessHandler not needed for custom authentication
+// import com.expensetracker.security.OAuth2LoginSuccessHandler;
+import com.expensetracker.security.JwtAuthenticationFilter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
@@ -13,6 +15,7 @@ import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.core.authority.mapping.GrantedAuthoritiesMapper;
 import org.springframework.security.core.authority.mapping.SimpleAuthorityMapper;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
@@ -23,14 +26,18 @@ import java.util.List;
 @Configuration
 @EnableWebSecurity
 @EnableMethodSecurity(prePostEnabled = true)
-@Profile("local")
+@Profile({"local", "docker"})
 public class LocalSecurityConfig {
 
     @Value("${cors.allowed-origins}")
     private String[] allowedOrigins;
 
     @Autowired
-    private OAuth2LoginSuccessHandler oAuth2LoginSuccessHandler;
+    private JwtAuthenticationFilter jwtAuthenticationFilter;
+
+    // Phase 4: OAuth2LoginSuccessHandler not needed for custom authentication
+    // @Autowired
+    // private OAuth2LoginSuccessHandler oAuth2LoginSuccessHandler;
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
@@ -38,39 +45,35 @@ public class LocalSecurityConfig {
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(authorize -> authorize
-                        .requestMatchers("/", "/login**", "/error**", "/oauth2/**").permitAll()
+                        // Phase 4: Allow custom authentication endpoints
                         .requestMatchers("/api/auth/**").permitAll()
                         .requestMatchers("/actuator/health").permitAll()
-                        .requestMatchers("/debug/**").permitAll() // Allow debug endpoints for local development
+                        .requestMatchers("/debug/**").permitAll()
+                        // Phase 4: Allow frontend static resources and routes
+                        .requestMatchers("/", "/login", "/signup", "/dashboard**", "/static/**").permitAll()
+                        .requestMatchers("/error**").permitAll()
+                        // Protect all other endpoints - require custom authentication
                         .anyRequest().authenticated()
                 )
                 .sessionManagement(session -> session
-                        .sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED)
-                        .maximumSessions(1)
-                        .maxSessionsPreventsLogin(false))
-                .oauth2Login(oauth2 -> oauth2
-                        .defaultSuccessUrl("http://localhost:3000/", true)
-                        .successHandler(oAuth2LoginSuccessHandler)
-                        .failureUrl("/login?error")
-                )
+                        .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                // Phase 4: DISABLE OAuth2 login - use custom authentication only
+                // .oauth2Login() - REMOVED FOR SECURITY
                 .exceptionHandling(exceptions -> exceptions
                         .authenticationEntryPoint((request, response, authEx) -> {
-                            // For API requests, return 401 instead of redirect
-                            if (request.getRequestURI().startsWith("/api/")) {
-                                response.setStatus(401);
-                                response.setContentType("application/json");
-                                response.getWriter().write("{\"error\":\"Unauthorized\",\"message\":\"Please authenticate via OAuth2\"}");
-                            } else {
-                                // For browser requests, redirect to OAuth2
-                                response.sendRedirect("/oauth2/authorization/keycloak");
-                            }
+                            // Stateless mode: Always return 401 JSON for API requests
+                            response.setStatus(401);
+                            response.setContentType("application/json");
+                            response.getWriter().write("{\"error\":\"Unauthorized\",\"message\":\"Please provide Bearer token via Authorization header\"}");
                         })
                 )
                 .logout(logout -> logout
+                        .logoutUrl("/logout")
                         .logoutSuccessUrl("http://localhost:3000/")
-                        .invalidateHttpSession(true)
-                        .deleteCookies("JSESSIONID")
-                );
+                        .deleteCookies("access_token", "refresh_token") // No JSESSIONID in stateless mode
+                )
+                // Add JWT authentication filter
+                .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
         return http.build();
     }
 

@@ -33,7 +33,7 @@ import java.util.Map;
 @Configuration
 @EnableWebSecurity
 @EnableMethodSecurity(prePostEnabled = true)
-@Profile("!local")
+@Profile("prod")
 public class SecurityConfig {
 
     @Value("${cors.allowed-origins}")

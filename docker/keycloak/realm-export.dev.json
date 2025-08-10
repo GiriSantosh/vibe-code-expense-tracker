@@ -111,6 +111,13 @@
       "enabled": true,
       "clientAuthenticatorType": "client-secret",
       "secret": "6kcwPFNSwgztS4rn3cSuK6aHWt44YkaG",
+      "standardFlowEnabled": true,
+      "implicitFlowEnabled": false,
+      "directAccessGrantsEnabled": true,
+      "serviceAccountsEnabled": false,
+      "publicClient": false,
+      "bearerOnly": false,
+      "consentRequired": false,
       "redirectUris": [
         "http://localhost:8080/*",
         "http://localhost:8080/login/oauth2/code/keycloak",
@@ -168,6 +175,12 @@
       "enabled": true,
       "clientAuthenticatorType": "client-secret",
       "secret": "frontend-client-secret",
+      "standardFlowEnabled": true,
+      "implicitFlowEnabled": false,
+      "directAccessGrantsEnabled": true,
+      "serviceAccountsEnabled": false,
+      "bearerOnly": false,
+      "consentRequired": false,
       "redirectUris": [
         "http://localhost:3000/*",
         "http://localhost:3000/auth/callback"
