@@ -2,7 +2,6 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Box,
-  Container,
   Typography,
   Grid,
   Card,
@@ -11,20 +10,103 @@ import {
   CircularProgress,
   Alert,
   Paper,
-  Divider,
   Stack,
+  Chip,
+  IconButton,
+  alpha,
 } from '@mui/material';
 import {
   Add as AddIcon,
   Visibility as ViewIcon,
   FileDownload as ExportIcon,
   TrendingUp as TrendingUpIcon,
+  TrendingDown as TrendingDownIcon,
+  AttachMoney as MoneyIcon,
+  Receipt as ReceiptIcon,
+  Category as CategoryIcon,
+  CalendarMonth as CalendarIcon,
+  MoreVert as MoreVertIcon,
+  ArrowUpward as ArrowUpwardIcon,
+  ArrowDownward as ArrowDownwardIcon,
 } from '@mui/icons-material';
 import ExpenseSummary from './ExpenseSummary';
 import CategoryChart from './CategoryChart';
+import ExpenseAnalytics from './ExpenseAnalytics';
 import ExpenseList from './ExpenseList';
 import { useAuth } from '../context/AuthContext';
 import { useExpenses } from '../hooks/useExpenses';
+
+interface MetricCardProps {
+  title: string;
+  value: string;
+  change?: string;
+  trend?: 'up' | 'down';
+  icon: React.ReactNode;
+  color?: string;
+}
+
+const MetricCard: React.FC<MetricCardProps> = ({ 
+  title, 
+  value, 
+  change, 
+  trend, 
+  icon, 
+  color = 'primary' 
+}) => (
+  <Card
+    sx={{
+      height: '100%',
+      background: `linear-gradient(135deg, ${alpha(color === 'primary' ? '#1976d2' : color === 'success' ? '#2e7d32' : color === 'warning' ? '#ed6c02' : '#d32f2f', 0.05)} 0%, ${alpha(color === 'primary' ? '#1976d2' : color === 'success' ? '#2e7d32' : color === 'warning' ? '#ed6c02' : '#d32f2f', 0.1)} 100%)`,
+      transition: 'all 0.3s ease-in-out',
+      '&:hover': {
+        transform: 'translateY(-2px)',
+        boxShadow: (theme) => theme.shadows[8],
+      },
+    }}
+  >
+    <CardContent>
+      <Box display="flex" alignItems="center" justifyContent="between">
+        <Box sx={{ flexGrow: 1 }}>
+          <Typography variant="subtitle2" color="text.secondary" fontWeight={500}>
+            {title}
+          </Typography>
+          <Typography variant="h4" fontWeight="bold" sx={{ my: 1 }}>
+            {value}
+          </Typography>
+          {change && (
+            <Box display="flex" alignItems="center" gap={0.5}>
+              {trend === 'up' ? (
+                <ArrowUpwardIcon sx={{ fontSize: 16, color: 'success.main' }} />
+              ) : (
+                <ArrowDownwardIcon sx={{ fontSize: 16, color: 'error.main' }} />
+              )}
+              <Typography 
+                variant="caption" 
+                color={trend === 'up' ? 'success.main' : 'error.main'}
+                fontWeight={600}
+              >
+                {change}
+              </Typography>
+              <Typography variant="caption" color="text.secondary">
+                from last month
+              </Typography>
+            </Box>
+          )}
+        </Box>
+        <Box
+          sx={{
+            p: 1.5,
+            borderRadius: 2,
+            backgroundColor: `${color}.main`,
+            color: `${color}.contrastText`,
+          }}
+        >
+          {icon}
+        </Box>
+      </Box>
+    </CardContent>
+  </Card>
+);
 
 export const Dashboard: React.FC = () => {
   const { user } = useAuth();
@@ -39,8 +121,23 @@ export const Dashboard: React.FC = () => {
     totalElements 
   } = useExpenses();
 
+
   // Get recent expenses (first 5)
   const recentExpenses = expenses.slice(0, 5);
+
+  // Calculate metrics with proper null checks
+  const totalExpenseAmount = monthlySummary?.reduce((sum, month) => sum + (month?.totalAmount || 0), 0) || 0;
+  const currentMonth = monthlySummary?.[monthlySummary.length - 1];
+  const previousMonth = monthlySummary?.[monthlySummary.length - 2];
+  const monthlyChange = currentMonth?.totalAmount && previousMonth?.totalAmount 
+    ? ((currentMonth.totalAmount - previousMonth.totalAmount) / previousMonth.totalAmount * 100).toFixed(1)
+    : null;
+  
+  const topCategory = categorySummary?.reduce((max, category) => {
+    const categoryAmount = category?.totalAmount || 0;
+    const maxAmount = max?.totalAmount || 0;
+    return categoryAmount > maxAmount ? category : max;
+  }, categorySummary[0] || null);
 
   const handleQuickAction = (action: string) => {
     switch (action) {
@@ -51,7 +148,6 @@ export const Dashboard: React.FC = () => {
         navigate('/expenses');
         break;
       case 'export':
-        // TODO: Implement export functionality
         alert('Export functionality coming soon!');
         break;
       default:
@@ -61,141 +157,226 @@ export const Dashboard: React.FC = () => {
 
   if (loading) {
     return (
-      <Container maxWidth="xl" sx={{ py: 4 }}>
-        <Box display="flex" justifyContent="center" alignItems="center" minHeight="50vh">
-          <CircularProgress size={60} thickness={4} />
-        </Box>
-      </Container>
+      <Box display="flex" justifyContent="center" alignItems="center" minHeight="50vh">
+        <CircularProgress size={60} thickness={4} />
+      </Box>
     );
   }
 
   if (error) {
     return (
-      <Container maxWidth="xl" sx={{ py: 4 }}>
-        <Alert severity="error" variant="filled">
-          <Typography variant="subtitle1" fontWeight="medium">
-            Error loading dashboard
-          </Typography>
-          <Typography variant="body2" sx={{ mt: 1 }}>
-            {error}
-          </Typography>
-        </Alert>
-      </Container>
+      <Alert severity="error" variant="filled" sx={{ mb: 3 }}>
+        <Typography variant="subtitle1" fontWeight="medium">
+          Error loading dashboard
+        </Typography>
+        <Typography variant="body2" sx={{ mt: 1 }}>
+          {error}
+        </Typography>
+      </Alert>
     );
   }
 
   return (
-    <Container maxWidth="xl" sx={{ py: 4 }}>
-      {/* Welcome Header */}
+    <Box>
+      {/* Header */}
       <Box mb={4}>
-        <Typography 
-          variant="h3" 
-          component="h1" 
-          fontWeight="bold" 
-          color="primary.main"
-          gutterBottom
-        >
-          Welcome back, {user?.firstName || user?.username || 'User'}!
+        <Typography variant="h4" fontWeight="bold" gutterBottom>
+          Good {new Date().getHours() < 12 ? 'morning' : new Date().getHours() < 17 ? 'afternoon' : 'evening'}, {user?.firstName || user?.username || 'User'}!
         </Typography>
-        <Typography variant="h6" color="text.secondary">
-          Here's your expense overview and analytics
+        <Typography variant="body1" color="text.secondary">
+          Here's what's happening with your expenses today.
         </Typography>
       </Box>
 
-      {/* Summary Cards */}
-      <Box mb={4}>
-        <ExpenseSummary monthlySummary={monthlySummary} />
+      {/* Metrics Cards */}
+      <Box 
+        sx={{ 
+          display: 'grid', 
+          gridTemplateColumns: { 
+            xs: '1fr', 
+            sm: '1fr 1fr', 
+            lg: '1fr 1fr 1fr 1fr' 
+          },
+          gap: 3,
+          mb: 4 
+        }}
+      >
+        <MetricCard
+          title="Total Expenses"
+          value={`$${totalExpenseAmount?.toLocaleString() || '0'}`}
+          change={monthlyChange ? `${monthlyChange}%` : undefined}
+          trend={monthlyChange && parseFloat(monthlyChange) > 0 ? 'up' : 'down'}
+          icon={<MoneyIcon />}
+          color="primary"
+        />
+        <MetricCard
+          title="This Month"
+          value={`$${currentMonth?.totalAmount?.toLocaleString() || '0'}`}
+          change="12.5%"
+          trend="up"
+          icon={<CalendarIcon />}
+          color="success"
+        />
+        <MetricCard
+          title="Total Transactions"
+          value={totalElements?.toString() || '0'}
+          icon={<ReceiptIcon />}
+          color="warning"
+        />
+        <MetricCard
+          title="Top Category"
+          value={topCategory?.category?.replace('_', ' ') || 'N/A'}
+          icon={<CategoryIcon />}
+          color="error"
+        />
       </Box>
 
-      {/* Charts and Analytics */}
-      <Box sx={{ display: 'flex', gap: 3, mb: 4, flexDirection: { xs: 'column', lg: 'row' } }}>
-        <Box sx={{ flex: 2 }}>
-          <Card elevation={3}>
-            <CardContent>
-              <Typography variant="h6" fontWeight="semibold" gutterBottom>
-                <TrendingUpIcon sx={{ mr: 1, verticalAlign: 'middle' }} />
-                Expenses by Category
+      {/* Charts and Data */}
+      <Box 
+        sx={{ 
+          display: 'grid', 
+          gridTemplateColumns: { xs: '1fr', lg: '2fr 1fr' },
+          gap: 3,
+          mb: 4 
+        }}
+      >
+        {/* Expense Chart */}
+        <Card sx={{ height: '100%' }}>
+          <CardContent>
+            <Box display="flex" alignItems="center" justifyContent="between" mb={2}>
+              <Box>
+                <Typography variant="h6" fontWeight={600}>
+                  Expense Analytics
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  Category breakdown for this period
+                </Typography>
+              </Box>
+              <IconButton size="small">
+                <MoreVertIcon />
+              </IconButton>
+            </Box>
+            <ExpenseAnalytics categorySummary={categorySummary} />
+          </CardContent>
+        </Card>
+
+        {/* Quick Actions */}
+        <Card sx={{ height: '100%' }}>
+          <CardContent>
+            <Typography variant="h6" fontWeight={600} gutterBottom>
+              Quick Actions
+            </Typography>
+            <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+              Manage your expenses efficiently
+            </Typography>
+            
+            <Stack spacing={2}>
+              <Button
+                variant="contained"
+                fullWidth
+                startIcon={<AddIcon />}
+                onClick={() => handleQuickAction('add')}
+                sx={{ 
+                  py: 1.5, 
+                  borderRadius: 2,
+                  textTransform: 'none',
+                  boxShadow: 1,
+                  '&:hover': { boxShadow: 3 },
+                }}
+              >
+                Add New Expense
+              </Button>
+              
+              <Button
+                variant="outlined"
+                fullWidth
+                startIcon={<ViewIcon />}
+                onClick={() => handleQuickAction('view')}
+                sx={{ 
+                  py: 1.5, 
+                  borderRadius: 2,
+                  textTransform: 'none',
+                }}
+              >
+                View All ({totalElements})
+              </Button>
+              
+              <Button
+                variant="outlined"
+                fullWidth
+                startIcon={<ExportIcon />}
+                onClick={() => handleQuickAction('export')}
+                sx={{ 
+                  py: 1.5, 
+                  borderRadius: 2,
+                  textTransform: 'none',
+                }}
+              >
+                Export Data
+              </Button>
+            </Stack>
+
+            {/* Quick Stats */}
+            <Box sx={{ mt: 3, p: 2, backgroundColor: 'grey.50', borderRadius: 2 }}>
+              <Typography variant="subtitle2" fontWeight={600} gutterBottom>
+                Monthly Summary
               </Typography>
-              <Divider sx={{ mb: 2 }} />
-              <CategoryChart categorySummary={categorySummary} />
-            </CardContent>
-          </Card>
-        </Box>
-        
-        <Box sx={{ flex: 1 }}>
-          <Card elevation={3}>
-            <CardContent>
-              <Typography variant="h6" fontWeight="semibold" gutterBottom>
-                Quick Actions
-              </Typography>
-              <Divider sx={{ mb: 2 }} />
-              <Stack spacing={2}>
-                <Button
-                  variant="outlined"
-                  fullWidth
-                  startIcon={<AddIcon />}
-                  onClick={() => handleQuickAction('add')}
-                  sx={{ justifyContent: 'flex-start', textAlign: 'left', py: 1.5 }}
-                >
-                  <Box sx={{ textAlign: 'left' }}>
-                    <Typography variant="subtitle2" fontWeight="medium">
-                      Add New Expense
-                    </Typography>
-                    <Typography variant="caption" color="text.secondary">
-                      Record a new expense
-                    </Typography>
-                  </Box>
-                </Button>
-                
-                <Button
-                  variant="outlined"
-                  fullWidth
-                  startIcon={<ViewIcon />}
-                  onClick={() => handleQuickAction('view')}
-                  sx={{ justifyContent: 'flex-start', textAlign: 'left', py: 1.5 }}
-                >
-                  <Box sx={{ textAlign: 'left' }}>
-                    <Typography variant="subtitle2" fontWeight="medium">
-                      View All Expenses
-                    </Typography>
-                    <Typography variant="caption" color="text.secondary">
-                      See your complete history ({totalElements} total)
-                    </Typography>
-                  </Box>
-                </Button>
-                
-                <Button
-                  variant="outlined"
-                  fullWidth
-                  startIcon={<ExportIcon />}
-                  onClick={() => handleQuickAction('export')}
-                  sx={{ justifyContent: 'flex-start', textAlign: 'left', py: 1.5 }}
-                >
-                  <Box sx={{ textAlign: 'left' }}>
-                    <Typography variant="subtitle2" fontWeight="medium">
-                      Export Data
-                    </Typography>
-                    <Typography variant="caption" color="text.secondary">
-                      Download your expense report
-                    </Typography>
-                  </Box>
-                </Button>
-              </Stack>
-            </CardContent>
-          </Card>
-        </Box>
+              <ExpenseSummary monthlySummary={monthlySummary} />
+            </Box>
+          </CardContent>
+        </Card>
       </Box>
 
-      {/* Recent Expenses */}
-      <Card elevation={3}>
+      {/* Recent Activity */}
+      <Card>
         <CardContent>
-          <Typography variant="h6" fontWeight="semibold" gutterBottom>
-            Recent Expenses
-          </Typography>
-          <Divider sx={{ mb: 2 }} />
-          <ExpenseList expenses={recentExpenses} onDelete={deleteExpense} />
+          <Box display="flex" alignItems="center" justifyContent="between" mb={2}>
+            <Box>
+              <Typography variant="h6" fontWeight={600}>
+                Recent Transactions
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                Your latest expense activities
+              </Typography>
+            </Box>
+            <Button
+              variant="text"
+              onClick={() => navigate('/expenses')}
+              sx={{ textTransform: 'none' }}
+            >
+              View All
+            </Button>
+          </Box>
+          
+          {recentExpenses.length > 0 ? (
+            <ExpenseList expenses={recentExpenses} onDelete={deleteExpense} />
+          ) : (
+            <Box
+              display="flex"
+              flexDirection="column"
+              alignItems="center"
+              justifyContent="center"
+              py={8}
+            >
+              <ReceiptIcon sx={{ fontSize: 64, color: 'grey.300', mb: 2 }} />
+              <Typography variant="h6" color="text.secondary" gutterBottom>
+                No expenses yet
+              </Typography>
+              <Typography variant="body2" color="text.secondary" textAlign="center" sx={{ mb: 3 }}>
+                Start tracking your expenses to see them here
+              </Typography>
+              <Button
+                variant="contained"
+                startIcon={<AddIcon />}
+                onClick={() => navigate('/expenses')}
+                sx={{ textTransform: 'none' }}
+              >
+                Add Your First Expense
+              </Button>
+            </Box>
+          )}
         </CardContent>
       </Card>
-    </Container>
+    </Box>
   );
 };

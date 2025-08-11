@@ -109,11 +109,21 @@ export const useExpenses = () => {
     setError(null);
     try {
       const summary = await apiService.getCategorySummary();
-      setCategorySummary(summary || []);
+      
+      // Transform backend response to match frontend expectations
+      // Backend returns: {category: string, total: number}
+      // Frontend expects: {category: string, totalAmount: number, percentage: number}
+      const transformedSummary = (summary || []).map((item: any) => ({
+        category: item.category,
+        totalAmount: item.total || 0,
+        percentage: item.percentage || 0
+      }));
+      
+      setCategorySummary(transformedSummary);
     } catch (err) {
       setError('Failed to fetch category summary.');
       setCategorySummary([]);
-      console.error(err);
+      console.error('useExpenses - Category Summary Error:', err);
     } finally {
       setLoading(false);
     }

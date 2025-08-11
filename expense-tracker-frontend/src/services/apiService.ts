@@ -137,8 +137,8 @@ class ApiService {
 
   async getCategorySummary(): Promise<Array<{
     category: string;
-    totalAmount: number;
-    percentage: number;
+    total: number;
+    percentage?: number;
   }>> {
     try {
       const response = await apiClient.get('/api/expenses/category-summary');
