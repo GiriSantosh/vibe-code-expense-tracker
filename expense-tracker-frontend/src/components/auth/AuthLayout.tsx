@@ -1,14 +1,6 @@
 import React from 'react';
-import {
-  Box,
-  Container,
-  Grid,
-  Paper,
-  Typography,
-  useTheme,
-  useMediaQuery,
-} from '@mui/material';
-import { AccountBalance } from '@mui/icons-material';
+import { Card, CardContent } from '../ui/card';
+import { Landmark } from 'lucide-react';
 
 interface AuthLayoutProps {
   children: React.ReactNode;
@@ -17,119 +9,54 @@ interface AuthLayoutProps {
 }
 
 const AuthLayout: React.FC<AuthLayoutProps> = ({ children, title, subtitle }) => {
-  const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
-
   return (
-    <Box
-      sx={{
-        minHeight: '100vh',
-        background: `linear-gradient(135deg, ${theme.palette.primary.main} 0%, ${theme.palette.primary.dark} 100%)`,
-        display: 'flex',
-        alignItems: 'center',
-        py: 2,
-      }}
-    >
-      <Container maxWidth="lg">
-        <Box sx={{ display: 'flex', minHeight: '80vh' }}>
+    <div className="min-h-screen bg-gradient-to-br from-primary to-primary/80 flex items-center py-8">
+      <div className="container max-w-6xl mx-auto px-4">
+        <div className="flex min-h-[80vh]">
           {/* Left Side - Branding (hidden on mobile) */}
-          {!isMobile && (
-            <Box
-              sx={{
-                flex: 1,
-                display: 'flex',
-                flexDirection: 'column',
-                justifyContent: 'center',
-                alignItems: 'center',
-                color: 'white',
-                textAlign: 'center',
-                px: 4,
-              }}
-            >
-              <AccountBalance sx={{ fontSize: 80, mb: 3, opacity: 0.9 }} />
-              <Typography variant="h3" component="h1" gutterBottom fontWeight="bold">
-                Personal Expense Tracker
-              </Typography>
-              <Typography variant="h6" sx={{ opacity: 0.9, maxWidth: 400 }}>
-                Take control of your finances with secure, encrypted expense tracking
-              </Typography>
-              <Box sx={{ mt: 4, opacity: 0.7 }}>
-                <Typography variant="body2">
-                  ✓ AES-256-GCM Encryption
-                </Typography>
-                <Typography variant="body2">
-                  ✓ Real-time Analytics
-                </Typography>
-                <Typography variant="body2">
-                  ✓ Secure OAuth2 Authentication
-                </Typography>
-              </Box>
-            </Box>
-          )}
+          <div className="hidden md:flex flex-1 flex-col justify-center items-center text-white text-center px-8">
+            <Landmark className="h-20 w-20 mb-6 opacity-90" />
+            <h1 className="text-4xl font-bold mb-4">
+              Personal Expense Tracker
+            </h1>
+            <p className="text-lg opacity-90 max-w-md mb-8">
+              Take control of your finances with secure, encrypted expense tracking
+            </p>
+            <div className="space-y-2 opacity-70">
+              <p className="text-sm">✓ AES-256-GCM Encryption</p>
+              <p className="text-sm">✓ Real-time Analytics</p>
+              <p className="text-sm">✓ Secure OAuth2 Authentication</p>
+            </div>
+          </div>
 
           {/* Right Side - Auth Form */}
-          <Box sx={{ flex: isMobile ? 1 : 1, minHeight: '100%' }}>
-            <Box
-              sx={{
-                display: 'flex',
-                flexDirection: 'column',
-                justifyContent: 'center',
-                height: '100%',
-                px: { xs: 2, md: 4 },
-              }}
-            >
-              <Paper
-                elevation={isMobile ? 0 : 12}
-                sx={{
-                  p: { xs: 3, md: 6 },
-                  backgroundColor: isMobile ? 'rgba(255,255,255,0.95)' : 'white',
-                  borderRadius: 3,
-                  backdropFilter: isMobile ? 'blur(10px)' : 'none',
-                }}
-              >
+          <div className="flex-1 flex flex-col justify-center px-4 md:px-8">
+            <Card className="md:shadow-2xl bg-white/95 md:bg-white backdrop-blur-sm">
+              <CardContent className="p-6 md:p-8">
                 {/* Mobile Logo */}
-                {isMobile && (
-                  <Box sx={{ textAlign: 'center', mb: 3 }}>
-                    <AccountBalance 
-                      sx={{ 
-                        fontSize: 48, 
-                        color: theme.palette.primary.main,
-                        mb: 1 
-                      }} 
-                    />
-                    <Typography 
-                      variant="h5" 
-                      component="h1" 
-                      sx={{ 
-                        color: theme.palette.primary.main,
-                        fontWeight: 'bold'
-                      }}
-                    >
-                      Expense Tracker
-                    </Typography>
-                  </Box>
-                )}
+                <div className="md:hidden text-center mb-6">
+                  <Landmark className="h-12 w-12 text-primary mx-auto mb-2" />
+                  <h1 className="text-xl font-bold text-primary">
+                    Expense Tracker
+                  </h1>
+                </div>
 
                 {/* Auth Form Header */}
-                <Box sx={{ mb: 4, textAlign: 'center' }}>
-                  <Typography variant="h4" component="h2" gutterBottom fontWeight="bold">
-                    {title}
-                  </Typography>
+                <div className="text-center mb-8">
+                  <h2 className="text-3xl font-bold mb-2">{title}</h2>
                   {subtitle && (
-                    <Typography variant="body1" color="text.secondary">
-                      {subtitle}
-                    </Typography>
+                    <p className="text-muted-foreground">{subtitle}</p>
                   )}
-                </Box>
+                </div>
 
                 {/* Auth Form Content */}
                 {children}
-              </Paper>
-            </Box>
-          </Box>
-        </Box>
-      </Container>
-    </Box>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+      </div>
+    </div>
   );
 };
 

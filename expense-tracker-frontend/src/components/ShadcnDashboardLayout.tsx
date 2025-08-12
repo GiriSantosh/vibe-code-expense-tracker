@@ -31,8 +31,6 @@ import {
   Settings,
   LogOut,
   ChevronUp,
-  Bell,
-  Search,
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { ThemeToggle } from './theme-toggle';

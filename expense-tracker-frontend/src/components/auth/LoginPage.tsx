@@ -1,24 +1,13 @@
 import React, { useState } from 'react';
-import { useNavigate, Link as RouterLink } from 'react-router-dom';
-import {
-  Box,
-  TextField,
-  Link,
-  Alert,
-  IconButton,
-  InputAdornment,
-  FormControlLabel,
-  Checkbox,
-} from '@mui/material';
-import { LoadingButton } from '@mui/lab';
-import {
-  Visibility,
-  VisibilityOff,
-  Email,
-  Lock,
-} from '@mui/icons-material';
-import AuthLayout from './AuthLayout';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
+import AuthLayout from './AuthLayout';
+import { Button } from '../ui/button';
+import { Input } from '../ui/input';
+import { Label } from '../ui/label';
+import { Checkbox } from '../ui/checkbox';
+import { Alert, AlertDescription } from '../ui/alert';
+import { Eye, EyeOff, Mail, Lock, Loader2 } from 'lucide-react';
 
 interface LoginFormData {
   email: string;
@@ -70,122 +59,107 @@ const LoginPage: React.FC = () => {
       title="Welcome Back"
       subtitle="Sign in to your account to continue"
     >
-      <Box component="form" onSubmit={handleSubmit} noValidate>
+      <form onSubmit={handleSubmit} className="space-y-6">
         {error && (
-          <Alert severity="error" sx={{ mb: 3 }}>
-            {error}
+          <Alert className="mb-6">
+            <AlertDescription>{error}</AlertDescription>
           </Alert>
         )}
 
-        <TextField
-          margin="normal"
-          required
-          fullWidth
-          id="email"
-          label="Email Address"
-          name="email"
-          autoComplete="email"
-          autoFocus
-          value={formData.email}
-          onChange={handleInputChange}
-          disabled={loading}
-          InputProps={{
-            startAdornment: (
-              <InputAdornment position="start">
-                <Email color="action" />
-              </InputAdornment>
-            ),
-          }}
-          sx={{ mb: 2 }}
-        />
+        <div className="space-y-2">
+          <Label htmlFor="email">Email Address</Label>
+          <div className="relative">
+            <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+            <Input
+              id="email"
+              name="email"
+              type="email"
+              autoComplete="email"
+              autoFocus
+              required
+              value={formData.email}
+              onChange={handleInputChange}
+              disabled={loading}
+              placeholder="Enter your email"
+              className="pl-10"
+            />
+          </div>
+        </div>
 
-        <TextField
-          margin="normal"
-          required
-          fullWidth
-          name="password"
-          label="Password"
-          type={showPassword ? 'text' : 'password'}
-          id="password"
-          autoComplete="current-password"
-          value={formData.password}
-          onChange={handleInputChange}
-          disabled={loading}
-          InputProps={{
-            startAdornment: (
-              <InputAdornment position="start">
-                <Lock color="action" />
-              </InputAdornment>
-            ),
-            endAdornment: (
-              <InputAdornment position="end">
-                <IconButton
-                  aria-label="toggle password visibility"
-                  onClick={() => setShowPassword(!showPassword)}
-                  edge="end"
-                  disabled={loading}
-                >
-                  {showPassword ? <VisibilityOff /> : <Visibility />}
-                </IconButton>
-              </InputAdornment>
-            ),
-          }}
-          sx={{ mb: 1 }}
-        />
+        <div className="space-y-2">
+          <Label htmlFor="password">Password</Label>
+          <div className="relative">
+            <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+            <Input
+              id="password"
+              name="password"
+              type={showPassword ? 'text' : 'password'}
+              autoComplete="current-password"
+              required
+              value={formData.password}
+              onChange={handleInputChange}
+              disabled={loading}
+              placeholder="Enter your password"
+              className="pl-10 pr-10"
+            />
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+              onClick={() => setShowPassword(!showPassword)}
+              disabled={loading}
+            >
+              {showPassword ? (
+                <EyeOff className="h-4 w-4" />
+              ) : (
+                <Eye className="h-4 w-4" />
+              )}
+            </Button>
+          </div>
+        </div>
 
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-          <FormControlLabel
-            control={
-              <Checkbox
-                name="rememberMe"
-                checked={formData.rememberMe}
-                onChange={handleInputChange}
-                disabled={loading}
-                color="primary"
-              />
-            }
-            label="Remember me"
-          />
-          <Link
-            component={RouterLink}
-            to="/forgot-password"
-            variant="body2"
-            sx={{ textDecoration: 'none' }}
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-2">
+            <Checkbox
+              id="rememberMe"
+              name="rememberMe"
+              checked={formData.rememberMe}
+              onCheckedChange={(checked) => 
+                setFormData(prev => ({ ...prev, rememberMe: !!checked }))
+              }
+              disabled={loading}
+            />
+            <Label htmlFor="rememberMe" className="text-sm font-normal">
+              Remember me
+            </Label>
+          </div>
+          <a
+            href="/forgot-password"
+            className="text-sm text-primary hover:underline"
           >
             Forgot password?
-          </Link>
-        </Box>
+          </a>
+        </div>
 
-        <LoadingButton
+        <Button
           type="submit"
-          fullWidth
-          variant="contained"
-          loading={loading}
-          disabled={!formData.email || !formData.password}
-          sx={{ 
-            mb: 3,
-            py: 1.5,
-            fontSize: '1rem',
-            fontWeight: 'bold',
-          }}
+          className="w-full"
+          disabled={!formData.email || !formData.password || loading}
         >
+          {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
           {loading ? 'Signing In...' : 'Sign In'}
-        </LoadingButton>
+        </Button>
 
-        <Box sx={{ textAlign: 'center' }}>
-          <Link
-            component={RouterLink}
-            to="/signup"
-            variant="body2"
-            sx={{ 
-              textDecoration: 'none',
-              fontWeight: 500,
-            }}
+        <div className="text-center">
+          <a
+            href="/signup"
+            className="text-sm text-primary hover:underline font-medium"
           >
             Don't have an account? Sign Up
-          </Link>
-        </Box>
-      </Box>
+          </a>
+        </div>
+      </form>
     </AuthLayout>
   );
 };

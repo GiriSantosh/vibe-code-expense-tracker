@@ -1,6 +1,6 @@
 import React from 'react';
-import { Alert, AlertTitle, Box, Typography } from '@mui/material';
-import { ErrorOutline, Warning, Info } from '@mui/icons-material';
+import { Alert, AlertDescription, AlertTitle } from '../ui/alert';
+import { AlertCircle, AlertTriangle, Info } from 'lucide-react';
 
 interface AuthErrorProps {
   error: string | string[] | null;
@@ -22,38 +22,45 @@ const AuthError: React.FC<AuthErrorProps> = ({
   const getIcon = () => {
     switch (severity) {
       case 'warning':
-        return <Warning />;
+        return <AlertTriangle className="h-4 w-4" />;
       case 'info':
-        return <Info />;
+        return <Info className="h-4 w-4" />;
       case 'error':
       default:
-        return <ErrorOutline />;
+        return <AlertCircle className="h-4 w-4" />;
+    }
+  };
+
+  const getAlertVariant = () => {
+    switch (severity) {
+      case 'warning':
+      case 'info':
+        return 'default';
+      case 'error':
+      default:
+        return 'destructive';
     }
   };
 
   return (
-    <Alert 
-      severity={severity}
-      icon={showIcon ? getIcon() : false}
-      sx={{ 
-        mb: 2,
-        '& .MuiAlert-message': {
-          width: '100%'
-        }
-      }}
-    >
-      {title && <AlertTitle>{title}</AlertTitle>}
-      {errors.length === 1 ? (
-        <Typography variant="body2">{errors[0]}</Typography>
-      ) : (
-        <Box component="ul" sx={{ m: 0, pl: 2 }}>
-          {errors.map((errorMsg, index) => (
-            <Typography component="li" variant="body2" key={index}>
-              {errorMsg}
-            </Typography>
-          ))}
-        </Box>
-      )}
+    <Alert variant={getAlertVariant()} className="mb-4">
+      {showIcon && getIcon()}
+      <div className="w-full">
+        {title && <AlertTitle>{title}</AlertTitle>}
+        <AlertDescription>
+          {errors.length === 1 ? (
+            <span>{errors[0]}</span>
+          ) : (
+            <ul className="mt-2 ml-4 list-disc space-y-1">
+              {errors.map((errorMsg, index) => (
+                <li key={index} className="text-sm">
+                  {errorMsg}
+                </li>
+              ))}
+            </ul>
+          )}
+        </AlertDescription>
+      </div>
     </Alert>
   );
 };
