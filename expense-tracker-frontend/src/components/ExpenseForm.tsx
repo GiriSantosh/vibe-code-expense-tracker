@@ -1,6 +1,57 @@
-import React, { useState } from 'react';
+import React from 'react';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import * as z from 'zod';
+import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
+import { Button } from './ui/button';
+import { Input } from './ui/input';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from './ui/select';
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from './ui/form';
 import { Expense } from '../types/Expense';
 import { ExpenseCategory } from '../types/ExpenseCategory';
+import { Loader2, Plus } from 'lucide-react';
+import { DatePicker } from './ui/date-picker';
+
+// Zod schema for form validation
+const expenseFormSchema = z.object({
+  amount: z
+    .string()
+    .min(1, 'Amount is required')
+    .refine(
+      (val) => {
+        const num = parseFloat(val);
+        return !isNaN(num) && num > 0;
+      },
+      'Amount must be a positive number'
+    ),
+  category: z.nativeEnum(ExpenseCategory),
+  description: z
+    .string()
+    .min(1, 'Description is required')
+    .min(3, 'Description must be at least 3 characters')
+    .max(200, 'Description must be less than 200 characters'),
+  date: z
+    .date()
+    .refine(
+      (date) => date <= new Date(),
+      'Date must not be in the future'
+    ),
+});
+
+type ExpenseFormValues = z.infer<typeof expenseFormSchema>;
 
 interface ExpenseFormProps {
   onSubmit: (expense: Omit<Expense, 'id' | 'createdAt'>) => void;
@@ -8,108 +59,164 @@ interface ExpenseFormProps {
 }
 
 const ExpenseForm: React.FC<ExpenseFormProps> = ({ onSubmit, isLoading }) => {
-  const [amount, setAmount] = useState<string>('');
-  const [category, setCategory] = useState<ExpenseCategory>(ExpenseCategory.FOOD);
-  const [description, setDescription] = useState<string>('');
-  const [date, setDate] = useState<string>(new Date().toISOString().split('T')[0]);
-  const [errors, setErrors] = useState<{[key: string]: string}>({});
+  const form = useForm<ExpenseFormValues>({
+    resolver: zodResolver(expenseFormSchema),
+    defaultValues: {
+      amount: '',
+      category: ExpenseCategory.FOOD,
+      description: '',
+      date: new Date(),
+    },
+  });
 
-  const validate = () => {
-    const newErrors: {[key: string]: string} = {};
-    if (!amount || parseFloat(amount) <= 0) {
-      newErrors.amount = 'Amount must be a positive number';
-    }
-    if (!description.trim()) {
-      newErrors.description = 'Description is required';
-    }
-    if (!date) {
-      newErrors.date = 'Date is required';
-    }
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!validate()) {
-      return;
-    }
-
+  const handleSubmit = (values: ExpenseFormValues) => {
     onSubmit({
-      amount: parseFloat(amount),
-      category,
-      description,
-      date,
+      amount: parseFloat(values.amount),
+      category: values.category,
+      description: values.description,
+      date: values.date.toISOString().split('T')[0], // Convert Date to string for API
     });
 
-    // Clear form after submission
-    setAmount('');
-    setDescription('');
-    setDate(new Date().toISOString().split('T')[0]);
+    // Reset form after successful submission
+    form.reset({
+      amount: '',
+      category: ExpenseCategory.FOOD,
+      description: '',
+      date: new Date(),
+    });
+  };
+
+  // Format category names for display
+  const formatCategoryName = (category: ExpenseCategory) => {
+    return category
+      .toLowerCase()
+      .split('_')
+      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(' ');
   };
 
   return (
-    <form onSubmit={handleSubmit} className="p-6 bg-white rounded-lg shadow-md">
-      <h2 className="text-2xl font-bold text-gray-800 mb-6">Add New Expense</h2>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div>
-          <label htmlFor="amount" className="block text-gray-700 text-sm font-semibold mb-2">Amount:</label>
-          <input
-            type="number"
-            id="amount"
-            value={amount}
-            onChange={(e) => setAmount(e.target.value)}
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition duration-200 ease-in-out"
-            step="0.01"
-            placeholder="e.g., 49.99"
-          />
-          {errors.amount && <p className="text-red-500 text-xs italic mt-1">{errors.amount}</p>}
-        </div>
-        <div>
-          <label htmlFor="category" className="block text-gray-700 text-sm font-semibold mb-2">Category:</label>
-          <select
-            id="category"
-            value={category}
-            onChange={(e) => setCategory(e.target.value as ExpenseCategory)}
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition duration-200 ease-in-out"
-          >
-            {Object.values(ExpenseCategory).map((cat) => (
-              <option key={cat} value={cat}>{cat}</option>
-            ))}
-          </select>
-        </div>
-        <div className="md:col-span-2">
-          <label htmlFor="description" className="block text-gray-700 text-sm font-semibold mb-2">Description:</label>
-          <input
-            type="text"
-            id="description"
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition duration-200 ease-in-out"
-            placeholder="e.g., Monthly Netflix subscription"
-          />
-          {errors.description && <p className="text-red-500 text-xs italic mt-1">{errors.description}</p>}
-        </div>
-        <div className="md:col-span-2">
-          <label htmlFor="date" className="block text-gray-700 text-sm font-semibold mb-2">Date:</label>
-          <input
-            type="date"
-            id="date"
-            value={date}
-            onChange={(e) => setDate(e.target.value)}
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition duration-200 ease-in-out"
-          />
-          {errors.date && <p className="text-red-500 text-xs italic mt-1">{errors.date}</p>}
-        </div>
-      </div>
-      <button
-        type="submit"
-        className="mt-6 w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-lg focus:outline-none focus:shadow-outline transition duration-200 ease-in-out transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed"
-        disabled={isLoading}
-      >
-        {isLoading ? 'Adding Expense...' : 'Add Expense'}
-      </button>
-    </form>
+    <Card className="w-full max-w-2xl mx-auto">
+      <CardHeader>
+        <CardTitle className="text-2xl font-bold flex items-center gap-2">
+          <Plus className="h-6 w-6" />
+          Add New Expense
+        </CardTitle>
+      </CardHeader>
+      <CardContent>
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* Amount Field */}
+              <FormField
+                control={form.control}
+                name="amount"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Amount</FormLabel>
+                    <FormControl>
+                      <Input
+                        type="number"
+                        step="0.01"
+                        placeholder="e.g., 49.99"
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              {/* Category Field */}
+              <FormField
+                control={form.control}
+                name="category"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Category</FormLabel>
+                    <Select
+                      onValueChange={field.onChange}
+                      defaultValue={field.value}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select a category" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {Object.values(ExpenseCategory).map((category) => (
+                          <SelectItem key={category} value={category}>
+                            {formatCategoryName(category)}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+
+            {/* Description Field - Full Width */}
+            <FormField
+              control={form.control}
+              name="description"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Description</FormLabel>
+                  <FormControl>
+                    <Input
+                      placeholder="e.g., Monthly Netflix subscription"
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            {/* Date Field - Full Width with DatePicker */}
+            <FormField
+              control={form.control}
+              name="date"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Date</FormLabel>
+                  <FormControl>
+                    <DatePicker
+                      date={field.value}
+                      onDateChange={field.onChange}
+                      placeholder="Select expense date"
+                      disabled={isLoading}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            {/* Submit Button */}
+            <Button
+              type="submit"
+              className="w-full"
+              disabled={isLoading}
+            >
+              {isLoading ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Adding Expense...
+                </>
+              ) : (
+                <>
+                  <Plus className="mr-2 h-4 w-4" />
+                  Add Expense
+                </>
+              )}
+            </Button>
+          </form>
+        </Form>
+      </CardContent>
+    </Card>
   );
 };
 

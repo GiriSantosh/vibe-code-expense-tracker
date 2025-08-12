@@ -1,36 +1,19 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect } from 'react';
 import {
-  Container,
-  Typography,
-  Box,
-  Grid,
-  Card,
-  CardContent,
-  CircularProgress,
-  Alert,
-  Divider,
-  FormControl,
-  InputLabel,
-  Select,
-  MenuItem,
-  Button,
-  Stack,
-  Pagination,
-  Chip,
-} from '@mui/material';
-import {
-  Add as AddIcon,
-  FilterList as FilterListIcon,
-  Assessment as AssessmentIcon,
-  TrendingUp as TrendingUpIcon,
-  List as ListIcon,
-  PieChart as PieChartIcon,
-} from '@mui/icons-material';
+  Plus,
+  Filter,
+  TrendingUp,
+  List,
+  Loader2,
+  AlertCircle,
+} from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
+import { Badge } from './ui/badge';
 import { useExpenses } from '../hooks/useExpenses';
 import ExpenseForm from './ExpenseForm';
-import ExpenseList from './ExpenseList';
+import { ExpenseDataTable, createColumns } from './expenses';
 import ExpenseSummary from './ExpenseSummary';
-import CategoryChart from './CategoryChart';
+import CategoryPieChart from './CategoryPieChart';
 import FilterControls from './FilterControls';
 import MonthlySplineChart from './MonthlySplineChart';
 import { ExpenseCategory } from '../types/ExpenseCategory';
@@ -46,21 +29,18 @@ export const ExpenseManagement: React.FC = () => {
     addExpense, 
     deleteExpense, 
     fetchMonthlySummary, 
-    totalPages, 
     totalElements 
   } = useExpenses();
   
-  const [currentPage, setCurrentPage] = useState(0);
-  const [pageSize, setPageSize] = useState(5);
 
   useEffect(() => {
-    fetchExpenses(undefined, undefined, undefined, currentPage, pageSize);
-  }, [currentPage, pageSize]);
+    fetchExpenses();
+  }, []);
 
   const handleAddExpense = async (expense: any) => {
     try {
       await addExpense(expense);
-      fetchExpenses(undefined, undefined, undefined, currentPage, pageSize);
+      fetchExpenses();
     } catch (err) {
       console.error('Error adding expense:', err);
     }
@@ -69,175 +49,138 @@ export const ExpenseManagement: React.FC = () => {
   const handleDeleteExpense = async (id: number) => {
     try {
       await deleteExpense(id);
-      fetchExpenses(undefined, undefined, undefined, currentPage, pageSize);
+      fetchExpenses();
     } catch (err) {
       console.error('Error deleting expense:', err);
     }
   };
 
   const handleFilterExpenses = (category?: ExpenseCategory, startDate?: string, endDate?: string) => {
-    setCurrentPage(0);
-    fetchExpenses(category, startDate, endDate, 0, pageSize);
+    fetchExpenses(category, startDate, endDate);
     fetchMonthlySummary(startDate, endDate);
   };
 
-  const handlePageChange = (_: React.ChangeEvent<unknown>, newPage: number) => {
-    setCurrentPage(newPage - 1);
-  };
+  if (loading) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[50vh]">
+        <Loader2 className="h-12 w-12 animate-spin text-primary" />
+        <p className="text-lg font-semibold text-primary mt-4">
+          Loading expense data...
+        </p>
+      </div>
+    );
+  }
 
-  const handlePageSizeChange = (event: any) => {
-    setPageSize(Number(event.target.value));
-    setCurrentPage(0);
-  };
+  if (error) {
+    return (
+      <div className="rounded-lg border border-red-200 bg-red-50 p-4 mb-6">
+        <div className="flex items-start gap-3">
+          <AlertCircle className="h-5 w-5 text-red-600 mt-0.5" />
+          <div>
+            <h3 className="font-medium text-red-800">
+              Error loading expense data
+            </h3>
+            <p className="text-sm text-red-700 mt-1">
+              {error}
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <Container maxWidth="xl" sx={{ py: 4 }}>
+    <div className="space-y-6 max-w-7xl mx-auto">
       {/* Header */}
-      <Box mb={4}>
-        <Typography variant="h3" component="h1" fontWeight="bold" color="primary.main" gutterBottom>
+      <div className="space-y-2">
+        <h1 className="text-3xl font-bold tracking-tight">
           Expense Management
-        </Typography>
-        <Typography variant="h6" color="text.secondary">
+        </h1>
+        <p className="text-muted-foreground">
           Track, categorize, and analyze your personal expenses
-        </Typography>
-      </Box>
-
-      {/* Loading State */}
-      {loading && (
-        <Box display="flex" flexDirection="column" alignItems="center" py={8}>
-          <CircularProgress size={60} thickness={4} />
-          <Typography variant="h6" color="primary.main" fontWeight="semibold" mt={2}>
-            Loading data...
-          </Typography>
-        </Box>
-      )}
-
-      {/* Error State */}
-      {error && (
-        <Alert severity="error" sx={{ mb: 3 }}>
-          <Typography variant="subtitle1" fontWeight="medium">
-            Error loading expense data
-          </Typography>
-          <Typography variant="body2">
-            {error}
-          </Typography>
-        </Alert>
-      )}
+        </p>
+      </div>
 
       {/* Add Expense Form and Summary */}
-      <Box sx={{ display: 'flex', gap: 3, mb: 4, flexDirection: { xs: 'column', lg: 'row' } }}>
-        <Box sx={{ flex: 2 }}>
-          <Card elevation={3}>
+      <div className="grid gap-6 lg:grid-cols-3">
+        <div className="lg:col-span-2">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Plus className="h-5 w-5" />
+                Add New Expense
+              </CardTitle>
+            </CardHeader>
             <CardContent>
-              <Typography variant="h5" fontWeight="semibold" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                <AddIcon /> Add New Expense
-              </Typography>
-              <Divider sx={{ mb: 3 }} />
               <ExpenseForm onSubmit={handleAddExpense} isLoading={loading} />
             </CardContent>
           </Card>
-        </Box>
-        <Box sx={{ flex: 1 }}>
-          <ExpenseSummary monthlySummary={monthlySummary} />
-        </Box>
-      </Box>
+        </div>
+        <div>
+          <Card>
+            <CardContent className="pt-6">
+              <ExpenseSummary monthlySummary={monthlySummary} />
+            </CardContent>
+          </Card>
+        </div>
+      </div>
 
       {/* Filters */}
-      <Card elevation={3} sx={{ mb: 4 }}>
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Filter className="h-5 w-5" />
+            Filter Expenses
+          </CardTitle>
+        </CardHeader>
         <CardContent>
-          <Typography variant="h5" fontWeight="semibold" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <FilterListIcon /> Filter Expenses
-          </Typography>
-          <Divider sx={{ mb: 3 }} />
           <FilterControls onFilter={handleFilterExpenses} />
         </CardContent>
       </Card>
 
       {/* Expense List and Category Chart */}
-      <Box sx={{ display: 'flex', gap: 3, mb: 4, flexDirection: { xs: 'column', lg: 'row' } }}>
-        <Box sx={{ flex: 2 }}>
-          <Card elevation={3}>
+      <div className="grid gap-6 lg:grid-cols-3">
+        <div className="lg:col-span-2">
+          <Card>
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <CardTitle className="flex items-center gap-2">
+                  <List className="h-5 w-5" />
+                  Expense List
+                </CardTitle>
+                <Badge variant="outline">
+                  {totalElements} total expenses
+                </Badge>
+              </div>
+            </CardHeader>
             <CardContent>
-              <Box display="flex" alignItems="center" justifyContent="space-between" mb={2}>
-                <Typography variant="h5" fontWeight="semibold" sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                  <ListIcon /> Expense List
-                </Typography>
-                <Chip 
-                  label={`${totalElements} total expenses`} 
-                  color="primary" 
-                  variant="outlined" 
-                />
-              </Box>
-              <Divider sx={{ mb: 3 }} />
-              
-              <ExpenseList expenses={expenses} onDelete={handleDeleteExpense} />
-              
-              {/* Pagination */}
-              <Box mt={3} pt={3} borderTop="1px solid" borderColor="divider">
-                <Box sx={{ 
-                  display: 'flex', 
-                  justifyContent: 'space-between', 
-                  alignItems: 'center',
-                  gap: 2,
-                  flexDirection: { xs: 'column', sm: 'row' }
-                }}>
-                  <Typography variant="body2" color="text.secondary">
-                    Page {currentPage + 1} of {totalPages || 1} ({totalElements} items total)
-                  </Typography>
-                  
-                  <Stack direction="row" spacing={2} alignItems="center">
-                    <Typography variant="body2" color="text.secondary">
-                      Items per page:
-                    </Typography>
-                    <FormControl size="small" sx={{ minWidth: 80 }}>
-                      <Select
-                        value={pageSize}
-                        onChange={handlePageSizeChange}
-                        variant="outlined"
-                      >
-                        <MenuItem value={5}>5</MenuItem>
-                        <MenuItem value={10}>10</MenuItem>
-                        <MenuItem value={20}>20</MenuItem>
-                      </Select>
-                    </FormControl>
-                    <Pagination
-                      count={totalPages || 1}
-                      page={currentPage + 1}
-                      onChange={handlePageChange}
-                      color="primary"
-                      showFirstButton
-                      showLastButton
-                    />
-                  </Stack>
-                </Box>
-              </Box>
+              <ExpenseDataTable 
+                columns={createColumns(handleDeleteExpense)} 
+                data={expenses} 
+                onDelete={handleDeleteExpense}
+                loading={loading}
+              />
             </CardContent>
           </Card>
-        </Box>
+        </div>
         
-        <Box sx={{ flex: 1 }}>
-          <Card elevation={3}>
-            <CardContent>
-              <Typography variant="h5" fontWeight="semibold" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                <PieChartIcon /> Expenses by Category
-              </Typography>
-              <Divider sx={{ mb: 3 }} />
-              <CategoryChart categorySummary={categorySummary} />
-            </CardContent>
-          </Card>
-        </Box>
-      </Box>
+        <div>
+          <CategoryPieChart categorySummary={categorySummary} />
+        </div>
+      </div>
 
       {/* Monthly Chart */}
-      <Card elevation={3}>
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <TrendingUp className="h-5 w-5" />
+            Monthly Trends
+          </CardTitle>
+        </CardHeader>
         <CardContent>
-          <Typography variant="h5" fontWeight="semibold" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <TrendingUpIcon /> Monthly Trends
-          </Typography>
-          <Divider sx={{ mb: 3 }} />
           <MonthlySplineChart monthlySummary={monthlySummary} />
         </CardContent>
       </Card>
-    </Container>
+    </div>
   );
 };

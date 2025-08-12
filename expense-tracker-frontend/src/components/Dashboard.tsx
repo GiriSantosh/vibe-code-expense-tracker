@@ -1,38 +1,25 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import {
-  Box,
-  Typography,
-  Grid,
-  Card,
-  CardContent,
-  Button,
-  CircularProgress,
-  Alert,
-  Paper,
-  Stack,
-  Chip,
-  IconButton,
-  alpha,
-} from '@mui/material';
-import {
-  Add as AddIcon,
-  Visibility as ViewIcon,
-  FileDownload as ExportIcon,
-  TrendingUp as TrendingUpIcon,
-  TrendingDown as TrendingDownIcon,
-  AttachMoney as MoneyIcon,
-  Receipt as ReceiptIcon,
-  Category as CategoryIcon,
-  CalendarMonth as CalendarIcon,
-  MoreVert as MoreVertIcon,
-  ArrowUpward as ArrowUpwardIcon,
-  ArrowDownward as ArrowDownwardIcon,
-} from '@mui/icons-material';
+import { 
+  Plus, 
+  Eye, 
+  Download,
+  DollarSign, 
+  Receipt, 
+  FolderOpen, 
+  Calendar, 
+  MoreVertical,
+  ChevronUp,
+  ChevronDown,
+  Loader2,
+  AlertCircle
+} from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
+import { Button } from './ui/button';
+import { cn } from '../lib/utils';
 import ExpenseSummary from './ExpenseSummary';
-import CategoryChart from './CategoryChart';
 import ExpenseAnalytics from './ExpenseAnalytics';
-import ExpenseList from './ExpenseList';
+import { ExpenseDataTable, createColumns } from './expenses';
 import { useAuth } from '../context/AuthContext';
 import { useExpenses } from '../hooks/useExpenses';
 
@@ -42,7 +29,7 @@ interface MetricCardProps {
   change?: string;
   trend?: 'up' | 'down';
   icon: React.ReactNode;
-  color?: string;
+  variant?: 'primary' | 'success' | 'warning' | 'destructive';
 }
 
 const MetricCard: React.FC<MetricCardProps> = ({ 
@@ -51,62 +38,66 @@ const MetricCard: React.FC<MetricCardProps> = ({
   change, 
   trend, 
   icon, 
-  color = 'primary' 
-}) => (
-  <Card
-    sx={{
-      height: '100%',
-      background: `linear-gradient(135deg, ${alpha(color === 'primary' ? '#1976d2' : color === 'success' ? '#2e7d32' : color === 'warning' ? '#ed6c02' : '#d32f2f', 0.05)} 0%, ${alpha(color === 'primary' ? '#1976d2' : color === 'success' ? '#2e7d32' : color === 'warning' ? '#ed6c02' : '#d32f2f', 0.1)} 100%)`,
-      transition: 'all 0.3s ease-in-out',
-      '&:hover': {
-        transform: 'translateY(-2px)',
-        boxShadow: (theme) => theme.shadows[8],
-      },
-    }}
-  >
-    <CardContent>
-      <Box display="flex" alignItems="center" justifyContent="between">
-        <Box sx={{ flexGrow: 1 }}>
-          <Typography variant="subtitle2" color="text.secondary" fontWeight={500}>
-            {title}
-          </Typography>
-          <Typography variant="h4" fontWeight="bold" sx={{ my: 1 }}>
-            {value}
-          </Typography>
-          {change && (
-            <Box display="flex" alignItems="center" gap={0.5}>
-              {trend === 'up' ? (
-                <ArrowUpwardIcon sx={{ fontSize: 16, color: 'success.main' }} />
-              ) : (
-                <ArrowDownwardIcon sx={{ fontSize: 16, color: 'error.main' }} />
-              )}
-              <Typography 
-                variant="caption" 
-                color={trend === 'up' ? 'success.main' : 'error.main'}
-                fontWeight={600}
-              >
-                {change}
-              </Typography>
-              <Typography variant="caption" color="text.secondary">
-                from last month
-              </Typography>
-            </Box>
-          )}
-        </Box>
-        <Box
-          sx={{
-            p: 1.5,
-            borderRadius: 2,
-            backgroundColor: `${color}.main`,
-            color: `${color}.contrastText`,
-          }}
-        >
-          {icon}
-        </Box>
-      </Box>
-    </CardContent>
-  </Card>
-);
+  variant = 'primary' 
+}) => {
+  const variantStyles = {
+    primary: 'border-primary/20 bg-primary/5 hover:bg-primary/10',
+    success: 'border-green-200 bg-green-50 hover:bg-green-100',
+    warning: 'border-orange-200 bg-orange-50 hover:bg-orange-100',
+    destructive: 'border-red-200 bg-red-50 hover:bg-red-100'
+  };
+
+  const iconStyles = {
+    primary: 'bg-primary text-primary-foreground',
+    success: 'bg-green-500 text-white',
+    warning: 'bg-orange-500 text-white',
+    destructive: 'bg-red-500 text-white'
+  };
+
+  return (
+    <Card className={cn(
+      'transition-all duration-300 hover:-translate-y-1 hover:shadow-lg',
+      variantStyles[variant]
+    )}>
+      <CardContent className="p-6">
+        <div className="flex items-center justify-between">
+          <div className="flex-1">
+            <p className="text-sm font-medium text-muted-foreground mb-1">
+              {title}
+            </p>
+            <p className="text-2xl font-bold mb-1">
+              {value}
+            </p>
+            {change && (
+              <div className="flex items-center gap-1">
+                {trend === 'up' ? (
+                  <ChevronUp className="h-4 w-4 text-green-600" />
+                ) : (
+                  <ChevronDown className="h-4 w-4 text-red-600" />
+                )}
+                <span className={cn(
+                  "text-xs font-medium",
+                  trend === 'up' ? 'text-green-600' : 'text-red-600'
+                )}>
+                  {change}
+                </span>
+                <span className="text-xs text-muted-foreground">
+                  from last month
+                </span>
+              </div>
+            )}
+          </div>
+          <div className={cn(
+            'p-3 rounded-lg',
+            iconStyles[variant]
+          )}>
+            {icon}
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
+};
 
 export const Dashboard: React.FC = () => {
   const { user } = useAuth();
@@ -157,226 +148,191 @@ export const Dashboard: React.FC = () => {
 
   if (loading) {
     return (
-      <Box display="flex" justifyContent="center" alignItems="center" minHeight="50vh">
-        <CircularProgress size={60} thickness={4} />
-      </Box>
+      <div className="flex justify-center items-center min-h-[50vh]">
+        <Loader2 className="h-12 w-12 animate-spin text-primary" />
+      </div>
     );
   }
 
   if (error) {
     return (
-      <Alert severity="error" variant="filled" sx={{ mb: 3 }}>
-        <Typography variant="subtitle1" fontWeight="medium">
-          Error loading dashboard
-        </Typography>
-        <Typography variant="body2" sx={{ mt: 1 }}>
-          {error}
-        </Typography>
-      </Alert>
+      <div className="rounded-lg border border-red-200 bg-red-50 p-4 mb-6">
+        <div className="flex items-start gap-3">
+          <AlertCircle className="h-5 w-5 text-red-600 mt-0.5" />
+          <div>
+            <h3 className="font-medium text-red-800">
+              Error loading dashboard
+            </h3>
+            <p className="text-sm text-red-700 mt-1">
+              {error}
+            </p>
+          </div>
+        </div>
+      </div>
     );
   }
 
   return (
-    <Box>
+    <div className="space-y-6">
       {/* Header */}
-      <Box mb={4}>
-        <Typography variant="h4" fontWeight="bold" gutterBottom>
+      <div>
+        <h1 className="text-3xl font-bold tracking-tight">
           Good {new Date().getHours() < 12 ? 'morning' : new Date().getHours() < 17 ? 'afternoon' : 'evening'}, {user?.firstName || user?.username || 'User'}!
-        </Typography>
-        <Typography variant="body1" color="text.secondary">
+        </h1>
+        <p className="text-muted-foreground">
           Here's what's happening with your expenses today.
-        </Typography>
-      </Box>
+        </p>
+      </div>
 
       {/* Metrics Cards */}
-      <Box 
-        sx={{ 
-          display: 'grid', 
-          gridTemplateColumns: { 
-            xs: '1fr', 
-            sm: '1fr 1fr', 
-            lg: '1fr 1fr 1fr 1fr' 
-          },
-          gap: 3,
-          mb: 4 
-        }}
-      >
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <MetricCard
           title="Total Expenses"
           value={`$${totalExpenseAmount?.toLocaleString() || '0'}`}
           change={monthlyChange ? `${monthlyChange}%` : undefined}
           trend={monthlyChange && parseFloat(monthlyChange) > 0 ? 'up' : 'down'}
-          icon={<MoneyIcon />}
-          color="primary"
+          icon={<DollarSign className="h-6 w-6" />}
+          variant="primary"
         />
         <MetricCard
           title="This Month"
           value={`$${currentMonth?.totalAmount?.toLocaleString() || '0'}`}
           change="12.5%"
           trend="up"
-          icon={<CalendarIcon />}
-          color="success"
+          icon={<Calendar className="h-6 w-6" />}
+          variant="success"
         />
         <MetricCard
           title="Total Transactions"
           value={totalElements?.toString() || '0'}
-          icon={<ReceiptIcon />}
-          color="warning"
+          icon={<Receipt className="h-6 w-6" />}
+          variant="warning"
         />
         <MetricCard
           title="Top Category"
           value={topCategory?.category?.replace('_', ' ') || 'N/A'}
-          icon={<CategoryIcon />}
-          color="error"
+          icon={<FolderOpen className="h-6 w-6" />}
+          variant="destructive"
         />
-      </Box>
+      </div>
 
       {/* Charts and Data */}
-      <Box 
-        sx={{ 
-          display: 'grid', 
-          gridTemplateColumns: { xs: '1fr', lg: '2fr 1fr' },
-          gap: 3,
-          mb: 4 
-        }}
-      >
-        {/* Expense Chart */}
-        <Card sx={{ height: '100%' }}>
-          <CardContent>
-            <Box display="flex" alignItems="center" justifyContent="between" mb={2}>
-              <Box>
-                <Typography variant="h6" fontWeight={600}>
+      <div className="grid gap-4 lg:grid-cols-3">
+        {/* Expense Chart - Takes 2 columns */}
+        <Card className="lg:col-span-2">
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle className="text-lg font-semibold">
                   Expense Analytics
-                </Typography>
-                <Typography variant="body2" color="text.secondary">
+                </CardTitle>
+                <p className="text-sm text-muted-foreground">
                   Category breakdown for this period
-                </Typography>
-              </Box>
-              <IconButton size="small">
-                <MoreVertIcon />
-              </IconButton>
-            </Box>
+                </p>
+              </div>
+              <Button variant="ghost" size="icon">
+                <MoreVertical className="h-4 w-4" />
+              </Button>
+            </div>
+          </CardHeader>
+          <CardContent>
             <ExpenseAnalytics categorySummary={categorySummary} />
           </CardContent>
         </Card>
 
         {/* Quick Actions */}
-        <Card sx={{ height: '100%' }}>
-          <CardContent>
-            <Typography variant="h6" fontWeight={600} gutterBottom>
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg font-semibold">
               Quick Actions
-            </Typography>
-            <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+            </CardTitle>
+            <p className="text-sm text-muted-foreground">
               Manage your expenses efficiently
-            </Typography>
+            </p>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <Button
+              className="w-full justify-start"
+              onClick={() => handleQuickAction('add')}
+            >
+              <Plus className="mr-2 h-4 w-4" />
+              Add New Expense
+            </Button>
             
-            <Stack spacing={2}>
-              <Button
-                variant="contained"
-                fullWidth
-                startIcon={<AddIcon />}
-                onClick={() => handleQuickAction('add')}
-                sx={{ 
-                  py: 1.5, 
-                  borderRadius: 2,
-                  textTransform: 'none',
-                  boxShadow: 1,
-                  '&:hover': { boxShadow: 3 },
-                }}
-              >
-                Add New Expense
-              </Button>
-              
-              <Button
-                variant="outlined"
-                fullWidth
-                startIcon={<ViewIcon />}
-                onClick={() => handleQuickAction('view')}
-                sx={{ 
-                  py: 1.5, 
-                  borderRadius: 2,
-                  textTransform: 'none',
-                }}
-              >
-                View All ({totalElements})
-              </Button>
-              
-              <Button
-                variant="outlined"
-                fullWidth
-                startIcon={<ExportIcon />}
-                onClick={() => handleQuickAction('export')}
-                sx={{ 
-                  py: 1.5, 
-                  borderRadius: 2,
-                  textTransform: 'none',
-                }}
-              >
-                Export Data
-              </Button>
-            </Stack>
+            <Button
+              variant="outline"
+              className="w-full justify-start"
+              onClick={() => handleQuickAction('view')}
+            >
+              <Eye className="mr-2 h-4 w-4" />
+              View All ({totalElements})
+            </Button>
+            
+            <Button
+              variant="outline"
+              className="w-full justify-start"
+              onClick={() => handleQuickAction('export')}
+            >
+              <Download className="mr-2 h-4 w-4" />
+              Export Data
+            </Button>
 
             {/* Quick Stats */}
-            <Box sx={{ mt: 3, p: 2, backgroundColor: 'grey.50', borderRadius: 2 }}>
-              <Typography variant="subtitle2" fontWeight={600} gutterBottom>
+            <div className="mt-4 p-4 bg-muted/50 rounded-lg">
+              <h4 className="text-sm font-medium mb-2">
                 Monthly Summary
-              </Typography>
+              </h4>
               <ExpenseSummary monthlySummary={monthlySummary} />
-            </Box>
+            </div>
           </CardContent>
         </Card>
-      </Box>
+      </div>
 
       {/* Recent Activity */}
       <Card>
-        <CardContent>
-          <Box display="flex" alignItems="center" justifyContent="between" mb={2}>
-            <Box>
-              <Typography variant="h6" fontWeight={600}>
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle className="text-lg font-semibold">
                 Recent Transactions
-              </Typography>
-              <Typography variant="body2" color="text.secondary">
+              </CardTitle>
+              <p className="text-sm text-muted-foreground">
                 Your latest expense activities
-              </Typography>
-            </Box>
+              </p>
+            </div>
             <Button
-              variant="text"
+              variant="ghost"
               onClick={() => navigate('/expenses')}
-              sx={{ textTransform: 'none' }}
             >
               View All
             </Button>
-          </Box>
-          
+          </div>
+        </CardHeader>
+        <CardContent>
           {recentExpenses.length > 0 ? (
-            <ExpenseList expenses={recentExpenses} onDelete={deleteExpense} />
+            <ExpenseDataTable 
+              columns={createColumns(deleteExpense)} 
+              data={recentExpenses} 
+              onDelete={deleteExpense}
+              loading={loading}
+            />
           ) : (
-            <Box
-              display="flex"
-              flexDirection="column"
-              alignItems="center"
-              justifyContent="center"
-              py={8}
-            >
-              <ReceiptIcon sx={{ fontSize: 64, color: 'grey.300', mb: 2 }} />
-              <Typography variant="h6" color="text.secondary" gutterBottom>
+            <div className="flex flex-col items-center justify-center py-8">
+              <Receipt className="h-16 w-16 text-muted-foreground/50 mb-4" />
+              <h3 className="text-lg font-medium text-muted-foreground mb-2">
                 No expenses yet
-              </Typography>
-              <Typography variant="body2" color="text.secondary" textAlign="center" sx={{ mb: 3 }}>
+              </h3>
+              <p className="text-sm text-muted-foreground text-center mb-4">
                 Start tracking your expenses to see them here
-              </Typography>
-              <Button
-                variant="contained"
-                startIcon={<AddIcon />}
-                onClick={() => navigate('/expenses')}
-                sx={{ textTransform: 'none' }}
-              >
+              </p>
+              <Button onClick={() => navigate('/expenses')}>
+                <Plus className="mr-2 h-4 w-4" />
                 Add Your First Expense
               </Button>
-            </Box>
+            </div>
           )}
         </CardContent>
       </Card>
-    </Box>
+    </div>
   );
 };

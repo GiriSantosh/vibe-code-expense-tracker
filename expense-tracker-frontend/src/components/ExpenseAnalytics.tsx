@@ -1,27 +1,16 @@
 import React from 'react';
 import {
-  Box,
-  Card,
-  CardContent,
-  Typography,
-  List,
-  ListItem,
-  ListItemText,
-  LinearProgress,
-  Avatar,
-  Stack,
-} from '@mui/material';
-import {
-  Category as CategoryIcon,
-  Restaurant as RestaurantIcon,
-  DirectionsCar as TransportIcon,
-  LocalHospital as HealthIcon,
-  Home as HomeIcon,
-  ShoppingCart as ShoppingIcon,
-  School as EducationIcon,
-  SportsEsports as EntertainmentIcon,
-  AttachMoney as FinanceIcon,
-} from '@mui/icons-material';
+  FolderOpen,
+  UtensilsCrossed,
+  Car,
+  Heart,
+  Home,
+  ShoppingBag,
+  GraduationCap,
+  Gamepad2,
+  DollarSign,
+} from 'lucide-react';
+import { Avatar, AvatarFallback } from './ui/avatar';
 import { CategorySummary } from '../types/Analytics';
 
 interface ExpenseAnalyticsProps {
@@ -31,17 +20,17 @@ interface ExpenseAnalyticsProps {
 // Category icon mapping
 const getCategoryIcon = (category: string) => {
   const iconMap: { [key: string]: React.ReactElement } = {
-    FOOD: <RestaurantIcon />,
-    TRANSPORTATION: <TransportIcon />,
-    HEALTHCARE: <HealthIcon />,
-    HOUSING: <HomeIcon />,
-    SHOPPING: <ShoppingIcon />,
-    EDUCATION: <EducationIcon />,
-    ENTERTAINMENT: <EntertainmentIcon />,
-    FINANCIAL_SERVICES: <FinanceIcon />,
+    FOOD: <UtensilsCrossed className="h-4 w-4" />,
+    TRANSPORTATION: <Car className="h-4 w-4" />,
+    HEALTHCARE: <Heart className="h-4 w-4" />,
+    HOUSING: <Home className="h-4 w-4" />,
+    SHOPPING: <ShoppingBag className="h-4 w-4" />,
+    EDUCATION: <GraduationCap className="h-4 w-4" />,
+    ENTERTAINMENT: <Gamepad2 className="h-4 w-4" />,
+    FINANCIAL_SERVICES: <DollarSign className="h-4 w-4" />,
   };
   
-  return iconMap[category] || <CategoryIcon />;
+  return iconMap[category] || <FolderOpen className="h-4 w-4" />;
 };
 
 // Category color mapping
@@ -90,142 +79,80 @@ const ExpenseAnalytics: React.FC<ExpenseAnalyticsProps> = ({ categorySummary }) 
 
   if (safeCategorySummary.length === 0) {
     return (
-      <Card sx={{ height: '100%' }}>
-        <CardContent>
-          <Typography variant="h6" fontWeight={600} gutterBottom>
-            Expense Analytics
-          </Typography>
-          <Box
-            display="flex"
-            flexDirection="column"
-            alignItems="center"
-            justifyContent="center"
-            py={8}
-          >
-            <CategoryIcon sx={{ fontSize: 64, color: 'grey.300', mb: 2 }} />
-            <Typography variant="body1" color="text.secondary" textAlign="center">
-              No expense data available yet
-            </Typography>
-            <Typography variant="body2" color="text.secondary" textAlign="center" sx={{ mt: 1 }}>
-              Start tracking expenses to see category breakdown
-            </Typography>
-          </Box>
-        </CardContent>
-      </Card>
+      <div className="flex flex-col items-center justify-center py-8">
+        <FolderOpen className="h-16 w-16 text-muted-foreground/50 mb-4" />
+        <h3 className="text-lg font-medium text-muted-foreground mb-2">
+          No expense data available yet
+        </h3>
+        <p className="text-sm text-muted-foreground text-center">
+          Start tracking expenses to see category breakdown
+        </p>
+      </div>
     );
   }
 
   return (
-    <Card sx={{ height: '100%' }}>
-      <CardContent>
-        <Typography variant="h6" fontWeight={600} gutterBottom>
-          Expense Analytics
-        </Typography>
-        <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-          Top spending categories this period
-        </Typography>
-        
-        <List sx={{ py: 0 }}>
-          {sortedCategories.map((category, index) => {
-            const categoryColor = getCategoryColor(category.category, index);
-            
-            return (
-              <ListItem 
-                key={category.category} 
-                sx={{ 
-                  px: 0, 
-                  py: 1.5,
-                  '&:hover': {
-                    backgroundColor: 'rgba(0, 0, 0, 0.04)',
-                    borderRadius: 1,
-                  },
-                }}
-              >
-                <ListItemText>
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                    {/* Category Icon */}
-                    <Avatar
-                      sx={{
-                        width: 40,
-                        height: 40,
-                        backgroundColor: categoryColor,
-                        color: 'white',
-                      }}
-                    >
-                      {getCategoryIcon(category.category)}
-                    </Avatar>
-                    
-                    {/* Category Info */}
-                    <Box sx={{ minWidth: 140 }}>
-                      <Typography 
-                        variant="body1" 
-                        fontWeight={500}
-                        color="text.primary"
-                      >
-                        {formatCategoryName(category.category)}
-                      </Typography>
-                      <Typography 
-                        variant="caption" 
-                        color="text.secondary"
-                      >
-                        ${category.totalAmount?.toLocaleString() || '0'}
-                      </Typography>
-                    </Box>
-                    
-                    {/* Progress Bar */}
-                    <Box sx={{ flex: 1, mx: 2 }}>
-                      <LinearProgress
-                        variant="determinate"
-                        value={category.percentage}
-                        sx={{
-                          height: 8,
-                          borderRadius: 4,
-                          backgroundColor: 'rgba(0, 0, 0, 0.08)',
-                          '& .MuiLinearProgress-bar': {
-                            borderRadius: 4,
-                            backgroundColor: categoryColor,
-                          },
-                        }}
-                      />
-                    </Box>
-                    
-                    {/* Percentage */}
-                    <Typography 
-                      variant="body2" 
-                      color="text.secondary"
-                      fontWeight={600}
-                      sx={{ minWidth: 50, textAlign: 'right' }}
-                    >
-                      {category.percentage.toFixed(1)}%
-                    </Typography>
-                  </Box>
-                </ListItemText>
-              </ListItem>
-            );
-          })}
-        </List>
-        
-        {/* Summary Footer */}
-        <Box 
-          sx={{ 
-            mt: 3, 
-            pt: 2, 
-            borderTop: 1, 
-            borderColor: 'divider',
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-          }}
-        >
-          <Typography variant="body2" color="text.secondary">
-            Total Categories: {safeCategorySummary.length}
-          </Typography>
-          <Typography variant="subtitle2" fontWeight={600}>
-            Total Spent: ${totalAmount?.toLocaleString() || '0'}
-          </Typography>
-        </Box>
-      </CardContent>
-    </Card>
+    <div className="space-y-4">
+      <div className="space-y-3">
+        {sortedCategories.map((category, index) => {
+          const categoryColor = getCategoryColor(category.category, index);
+          
+          return (
+            <div 
+              key={category.category}
+              className="flex items-center gap-3 p-3 rounded-lg hover:bg-muted/50 transition-colors"
+            >
+              {/* Category Icon */}
+              <Avatar className="h-10 w-10" style={{ backgroundColor: categoryColor }}>
+                <AvatarFallback style={{ backgroundColor: categoryColor, color: 'white' }}>
+                  {getCategoryIcon(category.category)}
+                </AvatarFallback>
+              </Avatar>
+              
+              {/* Category Info */}
+              <div className="min-w-[140px]">
+                <h4 className="text-sm font-medium text-foreground">
+                  {formatCategoryName(category.category)}
+                </h4>
+                <p className="text-xs text-muted-foreground">
+                  ${category.totalAmount?.toLocaleString() || '0'}
+                </p>
+              </div>
+              
+              {/* Progress Bar */}
+              <div className="flex-1 mx-2">
+                <div className="relative h-2 w-full overflow-hidden rounded-full bg-secondary">
+                  <div
+                    className="h-full w-full flex-1 transition-all"
+                    style={{
+                      backgroundColor: categoryColor,
+                      transform: `translateX(-${100 - (category.percentage || 0)}%)`
+                    }}
+                  />
+                </div>
+              </div>
+              
+              {/* Percentage */}
+              <div className="min-w-[50px] text-right">
+                <span className="text-sm font-medium text-muted-foreground">
+                  {category.percentage.toFixed(1)}%
+                </span>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+      
+      {/* Summary Footer */}
+      <div className="flex justify-between items-center pt-3 border-t border-border">
+        <p className="text-sm text-muted-foreground">
+          Total Categories: {safeCategorySummary.length}
+        </p>
+        <p className="text-sm font-semibold">
+          Total Spent: ${totalAmount?.toLocaleString() || '0'}
+        </p>
+      </div>
+    </div>
   );
 };
 

@@ -1,6 +1,5 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import { ThemeProvider } from './components/theme-provider';
 import { AuthProvider } from './context/AuthContext';
 import { PrivateRoute } from './components/PrivateRoute';
 import ShadcnDashboardLayout from './components/ShadcnDashboardLayout';
@@ -13,15 +12,9 @@ import './App.css';
 
 function App() {
   return (
-    <ThemeProvider
-      attribute="class"
-      defaultTheme="system"
-      enableSystem
-      disableTransitionOnChange
-    >
-      <div className="min-h-screen bg-background font-sans antialiased">
-        <AuthProvider>
-          <Router>
+    <div className="min-h-screen bg-background font-sans antialiased">
+      <AuthProvider>
+        <Router>
           <Routes>
             {/* Public Authentication Routes */}
             <Route path="/login" element={<LoginPage />} />
@@ -44,10 +37,9 @@ function App() {
             {/* Fallback */}
             <Route path="*" element={<Navigate to="/dashboard" replace />} />
           </Routes>
-          </Router>
-        </AuthProvider>
-      </div>
-    </ThemeProvider>
+        </Router>
+      </AuthProvider>
+    </div>
   );
 }
 
