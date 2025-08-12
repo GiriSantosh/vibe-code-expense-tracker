@@ -5,10 +5,10 @@
 
 ## 🛠️ Tech Stack
 - **Backend:** Spring Boot 3.x, Java 17+, PostgreSQL, OAuth2, AES-256-GCM encryption
-- **Frontend:** React 18+, TypeScript, Material-UI (MUI), Tailwind CSS, Highcharts
+- **Frontend:** React 18+, TypeScript, **Shadcn UI**, Tailwind CSS, Highcharts
 - **Infrastructure:** Docker, Keycloak, PostgreSQL
 - **Testing:** JUnit 5, Jest, 70%+ coverage target
-- **Phase 4 Addition:** Material-UI for custom authentication UI
+- **Phase 5 Addition:** Complete Shadcn UI migration with TanStack Table
 
 ## 🔐 Security Standards
 - **OAuth2:** Authorization Code Flow with Keycloak
@@ -68,17 +68,18 @@ public interface ExpenseRepository extends JpaRepository<Expense, UUID> {
 // Server errors → com.expensetracker.backend.exception
 ```
 
-### **Frontend Pattern (Material-UI + Enterprise):**
+### **Frontend Pattern (Shadcn UI + Enterprise):**
 ```typescript
-// Material-UI Dashboard Architecture
+// Shadcn UI Dashboard Architecture
 interface User { id: string; email: string; } // Strict TypeScript
 const useCurrentUser = () => { /* Custom hooks for API calls */ }
 const AuthContext = createContext<AuthContextType>() // Context for state
 
 // Component Structure
-DashboardLayout.tsx → Material-UI layout with responsive sidebar
-├── Dashboard.tsx → Metric cards with CSS Grid
-├── ExpenseAnalytics.tsx → Progress bars styled like MUI template
+ShadcnDashboardLayout.tsx → Shadcn UI layout with responsive sidebar
+├── Dashboard.tsx → Metric cards with Shadcn UI components
+├── ExpenseManagement.tsx → TanStack Table with data-table pattern
+├── UserProfile.tsx → Shadcn UI forms and settings
 └── Highcharts integration for data visualization
 ```
 
@@ -289,6 +290,7 @@ const validatePassword = (password: string): string[] => {
 - **Phase 2:** OAuth2 + Keycloak, AES-256-GCM encryption, PostgreSQL, Docker
 - **Phase 3:** Security hardening, enhanced logout, nuclear logout, optimized Docker
 - **Phase 4:** Custom Material-UI Authentication System (COMPLETED ✅)
+- **Phase 5:** Shadcn UI Migration - UserProfile, Auth components (COMPLETED ✅)
 
 ### **🚀 Deployment Options**
 - **Local IDE:** `./run-local.sh` (recommended for development)
@@ -354,7 +356,14 @@ const validatePassword = (password: string): string[] => {
 - ✅ **Clean UI:** Streamlined interface without unnecessary social login options
 
 ### **🎯 Future Enhancements**
+- **Forgot Password System:** Complete password reset flow with email service
+- **Remaining MUI → Shadcn Migration:** Dashboard analytics components 
 - API rate limiting, advanced monitoring, multi-tenancy, automated CI/CD
+
+### **⚠️ Known Limitations**
+- **Forgot Password:** Link exists but not implemented (no backend/frontend flow)
+- **Mixed UI:** Some components still use Material-UI (Dashboard metrics)
+- **Email Service:** Not configured for password reset notifications
 
 ---
 
