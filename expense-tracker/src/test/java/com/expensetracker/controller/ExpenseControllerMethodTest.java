@@ -1,10 +1,12 @@
 package com.expensetracker.controller;
 
-import com.expensetracker.exception.InvalidInputException;
-import com.expensetracker.exception.ResourceNotFoundException;
+import com.expensetracker.web.controller.*;
+
+import com.expensetracker.web.exception.InvalidInputException;
+import com.expensetracker.web.exception.ResourceNotFoundException;
 import com.expensetracker.model.Expense;
 import com.expensetracker.model.ExpenseCategory;
-import com.expensetracker.service.ExpenseService;
+import com.expensetracker.backend.service.ExpenseService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.DisplayName;

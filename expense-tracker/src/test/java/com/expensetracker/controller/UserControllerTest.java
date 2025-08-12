@@ -1,8 +1,10 @@
 package com.expensetracker.controller;
 
-import com.expensetracker.dto.UserDTO;
+import com.expensetracker.web.controller.*;
+
+import com.expensetracker.mapper.UserDTO;
 import com.expensetracker.model.ExpenseCategory;
-import com.expensetracker.service.UserService;
+import com.expensetracker.backend.service.UserService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -24,7 +26,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 import org.springframework.test.context.ActiveProfiles;
 
-@WebMvcTest(UserController.class)
+@WebMvcTest(com.expensetracker.web.controller.UserController.class)
 @Import({TestSecurityConfig.class})
 @ActiveProfiles("test")
 @DisplayName("UserController Tests")

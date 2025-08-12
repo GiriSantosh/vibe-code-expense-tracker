@@ -6,6 +6,13 @@
 - **Development:** `http://localhost:8080`
 - **Production:** `https://your-domain.com`
 
+### **Enterprise Package Structure**
+- **Controllers:** `com.expensetracker.web.controller.*`
+- **Services:** `com.expensetracker.backend.service.*`
+- **DTOs:** `com.expensetracker.mapper.*`
+- **Filters:** `com.expensetracker.web.filters.*`
+- **Exceptions:** `com.expensetracker.web.exception.*` (4xx) | `com.expensetracker.backend.exception.*` (5xx)
+
 ---
 
 ## 🔑 Authentication Endpoints
@@ -15,6 +22,8 @@
 POST /api/auth/login
 ```
 
+**Controller:** `com.expensetracker.web.controller.AuthController`  
+**Service:** `com.expensetracker.backend.service.CustomAuthService`  
 **Description:** Authenticate user with email/password via custom Material-UI interface
 
 **Request Headers:**
@@ -244,6 +253,8 @@ Cookie: JSESSIONID=ABC123...
 GET /api/expenses?page=0&size=10
 ```
 
+**Controller:** `com.expensetracker.web.controller.ExpenseController`  
+**Service:** `com.expensetracker.backend.service.ExpenseService`  
 **Description:** Retrieve paginated expense list for authenticated user
 
 **Request Headers:**

@@ -1,15 +1,17 @@
 package com.expensetracker.controller;
 
-import com.expensetracker.config.SecurityConfig;
+import com.expensetracker.web.controller.*;
+
+import com.expensetracker.backend.config.SecurityConfig;
 import com.expensetracker.model.Expense;
 import com.expensetracker.model.ExpenseCategory;
-import com.expensetracker.service.ExpenseService;
+import com.expensetracker.backend.service.ExpenseService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-import com.expensetracker.exception.InvalidInputException;
-import com.expensetracker.exception.ResourceNotFoundException;
+import com.expensetracker.web.exception.InvalidInputException;
+import com.expensetracker.web.exception.ResourceNotFoundException;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
@@ -32,7 +34,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 import org.springframework.test.context.ActiveProfiles;
 
-@WebMvcTest(com.expensetracker.controller.ExpenseController.class)
+@WebMvcTest(com.expensetracker.web.controller.ExpenseController.class)
 @Import({com.expensetracker.controller.TestSecurityConfig.class})
 @ActiveProfiles("test")
 public class ExpenseControllerTest {

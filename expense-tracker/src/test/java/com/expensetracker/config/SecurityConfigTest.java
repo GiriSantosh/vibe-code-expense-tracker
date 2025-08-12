@@ -1,7 +1,9 @@
 package com.expensetracker.config;
 
-import com.expensetracker.security.OAuth2LoginSuccessHandler;
-import com.expensetracker.service.KeycloakAdminService;
+import com.expensetracker.backend.config.*;
+
+import com.expensetracker.web.config.OAuth2LoginSuccessHandler;
+import com.expensetracker.backend.service.KeycloakAdminService;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.DisplayName;
 import org.springframework.beans.factory.annotation.Autowired;

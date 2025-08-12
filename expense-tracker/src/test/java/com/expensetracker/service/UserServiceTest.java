@@ -1,6 +1,8 @@
 package com.expensetracker.service;
 
-import com.expensetracker.dto.UserDTO;
+import com.expensetracker.backend.service.*;
+
+import com.expensetracker.mapper.UserDTO;
 import com.expensetracker.model.ExpenseCategory;
 import com.expensetracker.model.User;
 import com.expensetracker.model.UserPreferences;

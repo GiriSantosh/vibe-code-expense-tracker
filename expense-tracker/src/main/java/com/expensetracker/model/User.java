@@ -1,6 +1,6 @@
 package com.expensetracker.model;
 
-import com.expensetracker.util.EncryptedStringConverter;
+import com.expensetracker.backend.util.EncryptedStringConverter;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import java.time.LocalDateTime;

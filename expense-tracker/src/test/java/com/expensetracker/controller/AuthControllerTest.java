@@ -1,6 +1,8 @@
 package com.expensetracker.controller;
 
-import com.expensetracker.service.KeycloakAdminService;
+import com.expensetracker.web.controller.*;
+
+import com.expensetracker.backend.service.KeycloakAdminService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.DisplayName;

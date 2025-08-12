@@ -52,39 +52,44 @@ This application allows users to track personal expenses, categorize spending, a
 - ✅ Comprehensive test coverage (Backend: 95%, Frontend: 90%)
 - ✅ Clean code architecture with separation of concerns
 - ✅ Type-safe development with TypeScript
-- ✅ Modern UI with Tailwind CSS
-- ✅ Interactive data visualization
+- ✅ Modern Material-UI dashboard with responsive design
+- ✅ Interactive data visualization with Highcharts
+- ✅ Enterprise package structure (backend/web/mapper)
 
 ## 🛠️ Technology Stack
 
-### Backend
+### Backend (Enterprise Package Structure)
 - **Framework:** Spring Boot 3.x
 - **Language:** Java 17+
 - **Build Tool:** Gradle
 - **Database:** PostgreSQL (production), H2 (tests only)
 - **ORM:** Spring Data JPA
-- **Authentication:** OAuth2 Authorization Code Flow with Keycloak
+- **Authentication:** OAuth2 Resource Owner Password Flow + Custom Auth System
 - **Encryption:** AES-256-GCM for PII data (email addresses)
 - **Testing:** JUnit 5, Mockito, SpringBootTest with comprehensive security tests
 - **Coverage:** JaCoCo with 95%+ backend coverage
 - **Security:** Enhanced logout handlers, Keycloak Admin API integration
+- **Package Structure:** Enterprise-grade separation (backend/web/mapper)
 
-### Frontend
+### Frontend (Material-UI Dashboard)
 - **Framework:** React 18+ with TypeScript
-- **Styling:** Tailwind CSS
-- **Charts:** Highcharts (optimized for better performance)
-- **HTTP Client:** Axios with OAuth2 interceptors
-- **Authentication:** OAuth2 Authorization Code Flow with enhanced logout
-- **Security:** PII masking, nuclear logout, session management
+- **UI Library:** Material-UI (MUI) v5+ for dashboard components
+- **Styling:** Tailwind CSS + Material-UI theming
+- **Charts:** Highcharts with Material-UI integration
+- **HTTP Client:** Axios with JWT token handling
+- **Authentication:** Custom Material-UI forms + OAuth2 backend integration
+- **Security:** HTTP-only cookies, secure session management
 - **Testing:** Jest, React Testing Library, MSW for API mocking
 - **Build Tool:** Create React App with optimized Docker builds
+- **Dashboard:** Responsive sidebar, analytics cards, progress bars
 
-### Infrastructure (Phase 2)
+### Infrastructure (Production-Ready)
 - **Containerization:** Docker & Docker Compose (optimized configurations)
 - **Identity Provider:** Keycloak with admin API integration
 - **Database:** PostgreSQL with encrypted PII storage
 - **Reverse Proxy:** Nginx with health checks
 - **Development:** Local IDE development with containerized infrastructure
+- **Authentication Flow:** Custom Material-UI → Spring Security → Keycloak → PostgreSQL
 
 ## 🏗️ Architecture Overview
 

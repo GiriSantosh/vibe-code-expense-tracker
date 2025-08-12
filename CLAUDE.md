@@ -18,23 +18,68 @@
 
 ## 📝 Architecture Patterns
 
+### **Enterprise Package Structure (IMPLEMENTED ✅)**
+```
+com.expensetracker
+├── main/                              # Application entry point
+│   └── PersonalExpenseTrackerApplication.java
+├── backend/                           # Business logic layer
+│   ├── config/                       # Backend configurations
+│   ├── service/                      # Business services
+│   ├── util/                         # Utility classes
+│   └── exception/                    # Internal server errors (5xx)
+├── web/                              # Presentation layer
+│   ├── controller/                   # REST API endpoints
+│   ├── filters/                      # Authentication filters
+│   ├── config/                       # Web security configurations
+│   └── exception/                    # Client-facing errors (4xx)
+├── mapper/                           # Data transfer objects
+├── model/                            # JPA entities (shared)
+└── repository/                       # Data access layer (shared)
+```
+
 ### **Critical: Circular Dependencies Prevention**
 - **JPA:** Use `@JsonIgnore` on bidirectional mappings
 - **API Design:** Use DTOs instead of entities for responses
 - **Testing:** Always test API endpoints for JSON serialization
 
-### **Backend Pattern:**
+### **Backend Pattern (Enterprise Structure):**
 ```java
-@RestController // Thin controllers
-@Service @Transactional // Business logic + error handling
-public interface Repository extends JpaRepository<Entity, UUID> // Simple data access
+// Web Layer (com.expensetracker.web.controller)
+@RestController 
+public class ExpenseController {
+    @Autowired
+    private ExpenseService expenseService; // Inject from backend layer
+}
+
+// Business Layer (com.expensetracker.backend.service)
+@Service @Transactional
+public class ExpenseService {
+    // Business logic + error handling + encryption
+}
+
+// Data Layer (com.expensetracker.repository)
+public interface ExpenseRepository extends JpaRepository<Expense, UUID> {
+    // Simple data access
+}
+
+// Exception Handling
+// Client errors → com.expensetracker.web.exception
+// Server errors → com.expensetracker.backend.exception
 ```
 
-### **Frontend Pattern:**
+### **Frontend Pattern (Material-UI + Enterprise):**
 ```typescript
+// Material-UI Dashboard Architecture
 interface User { id: string; email: string; } // Strict TypeScript
 const useCurrentUser = () => { /* Custom hooks for API calls */ }
 const AuthContext = createContext<AuthContextType>() // Context for state
+
+// Component Structure
+DashboardLayout.tsx → Material-UI layout with responsive sidebar
+├── Dashboard.tsx → Metric cards with CSS Grid
+├── ExpenseAnalytics.tsx → Progress bars styled like MUI template
+└── Highcharts integration for data visualization
 ```
 
 ## 🧪 Testing Philosophy & Standards

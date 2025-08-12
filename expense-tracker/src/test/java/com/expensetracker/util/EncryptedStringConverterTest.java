@@ -1,6 +1,8 @@
 package com.expensetracker.util;
 
-import com.expensetracker.service.EncryptionService;
+import com.expensetracker.backend.util.*;
+
+import com.expensetracker.backend.service.EncryptionService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
